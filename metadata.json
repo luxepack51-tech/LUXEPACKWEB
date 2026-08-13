@@ -1,0 +1,6 @@
+{
+  "name": "Parfumerie COD Store",
+  "description": "Customer storefront for ordering perfume packages with cash on delivery in Algeria.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
