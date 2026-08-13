@@ -1,6 +1,6 @@
 import React from 'react';
 import { CreatedOrder, StoreSettings } from '../../types/storefront';
-import { CheckCircle2, ShoppingBag, PhoneCall, MessageCircle, ArrowRight, Package, MapPin, Truck } from 'lucide-react';
+import { CheckCircle2, ArrowRight, Package, MapPin } from 'lucide-react';
 
 interface OrderSuccessModalProps {
   order: CreatedOrder;
@@ -13,15 +13,6 @@ export const OrderSuccessModal: React.FC<OrderSuccessModalProps> = ({
   settings,
   onReset
 }) => {
-  const whatsappNumber = settings.whatsapp_number || '213550000000';
-  const whatsappMsg = encodeURIComponent(
-    `مرحباً! لقد قمت بطلب جديد برقم ${order.order_number || order.id}.\n` +
-    `الاسم: ${order.customer_name}\n` +
-    `الباقة: ${order.package_name}\n` +
-    `المجموع: ${order.total_price} ${settings.currency}`
-  );
-  const whatsappUrl = `https://wa.me/${whatsappNumber.replace(/[^0-9]/g, '')}?text=${whatsappMsg}`;
-
   return (
     <div className="fixed inset-0 z-50 bg-zinc-950/90 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto animate-fade-in">
       <div className="bg-zinc-900 border border-amber-500/40 rounded-3xl max-w-xl w-full p-6 sm:p-8 shadow-2xl relative my-8 text-white">
@@ -101,21 +92,11 @@ export const OrderSuccessModal: React.FC<OrderSuccessModalProps> = ({
           </div>
         </div>
 
-        {/* Action Buttons */}
-        <div className="space-y-3">
-          <a
-            href={whatsappUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="w-full py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-bold text-sm sm:text-base flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 transition-all cursor-pointer"
-          >
-            <MessageCircle className="w-5 h-5 fill-current" />
-            <span>تأكيد الطلب فوراً عبر واتساب WhatsApp</span>
-          </a>
-
+        {/* Action Button */}
+        <div>
           <button
             onClick={onReset}
-            className="w-full py-3.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white font-bold text-sm sm:text-base flex items-center justify-center gap-2 border border-zinc-700 transition-all cursor-pointer"
+            className="w-full py-3.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-sm sm:text-base flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 transition-all cursor-pointer"
           >
             <ArrowRight className="w-4 h-4" />
             <span>العودة إلى المتجر الرئيسية</span>
