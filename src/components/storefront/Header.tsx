@@ -22,7 +22,7 @@ export const Header: React.FC<HeaderProps> = ({
   const perfumesNeeded = selectedPackage ? selectedPackage.perfumes_count : 0;
   const isComplete = selectedPackage && selectedPerfumes.length === perfumesNeeded;
 
-  const rawWhatsapp = settings.whatsapp_number || settings.phone_number || '213697613169';
+  const rawWhatsapp = settings.whatsapp_number || settings.phone_number || '213796161396';
   let cleanWhatsapp = rawWhatsapp.replace(/[^0-9]/g, '');
   if (cleanWhatsapp.startsWith('0')) {
     cleanWhatsapp = '213' + cleanWhatsapp.slice(1);
@@ -30,7 +30,7 @@ export const Header: React.FC<HeaderProps> = ({
   if (!cleanWhatsapp.startsWith('213')) {
     cleanWhatsapp = '213' + cleanWhatsapp;
   }
-  const whatsappUrl = `https://wa.me/${cleanWhatsapp || '213697613169'}?text=${encodeURIComponent('مرحباً! أود الاستفسار بخصوص عطور المتجر.')}`;
+  const whatsappUrl = `https://wa.me/${cleanWhatsapp || '213796161396'}?text=${encodeURIComponent('مرحباً! أود الاستفسار بخصوص عطور المتجر.')}`;
 
   return (
     <div className="w-full">
