@@ -1,75 +1,116 @@
 import React from 'react';
-import { Sparkles, ShoppingBag, PhoneCall } from 'lucide-react';
+import { Sparkles, MessageCircle, ShoppingBag, ShieldCheck } from 'lucide-react';
 import { StoreSettings, Package, Perfume } from '../../types/storefront';
 
 interface HeaderProps {
   settings: StoreSettings;
   selectedPackage: Package | null;
   selectedPerfumes: Perfume[];
+  packagesCount?: number;
   onScrollToSection: (sectionId: string) => void;
+  onOpenCheckout?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
   settings,
   selectedPackage,
   selectedPerfumes,
-  onScrollToSection
+  packagesCount = 0,
+  onScrollToSection,
+  onOpenCheckout
 }) => {
   const perfumesNeeded = selectedPackage ? selectedPackage.perfumes_count : 0;
   const isComplete = selectedPackage && selectedPerfumes.length === perfumesNeeded;
 
+  const rawWhatsapp = settings.whatsapp_number || settings.phone_number || '213697613169';
+  let cleanWhatsapp = rawWhatsapp.replace(/[^0-9]/g, '');
+  if (cleanWhatsapp.startsWith('0')) {
+    cleanWhatsapp = '213' + cleanWhatsapp.slice(1);
+  }
+  if (!cleanWhatsapp.startsWith('213')) {
+    cleanWhatsapp = '213' + cleanWhatsapp;
+  }
+  const whatsappUrl = `https://wa.me/${cleanWhatsapp || '213697613169'}?text=${encodeURIComponent('مرحباً! أود الاستفسار بخصوص عطور المتجر.')}`;
+
   return (
-    <header className="sticky top-0 z-40 bg-zinc-950/90 backdrop-blur-md border-b border-amber-500/20 text-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between">
-        
-        {/* Brand / Logo */}
-        <div className="flex items-center gap-3 cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
-          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-tr from-amber-600 via-amber-400 to-yellow-200 p-0.5 shadow-lg shadow-amber-500/10">
-            <div className="w-full h-full bg-zinc-950 rounded-[10px] flex items-center justify-center">
-              <Sparkles className="w-5 h-5 text-amber-400 animate-pulse" />
-            </div>
-          </div>
-          <div>
-            <h1 className="text-lg sm:text-2xl font-bold bg-gradient-to-r from-amber-200 via-yellow-100 to-amber-400 bg-clip-text text-transparent tracking-wide">
-              {settings.store_name}
-            </h1>
-            <p className="text-[10px] sm:text-xs text-amber-200/70 font-medium">متجر العطور الفاخرة بالجزائر 🇩🇿</p>
-          </div>
+    <div className="w-full">
+      {/* 1. Gradient Top Header Banner */}
+      <header className="w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white py-6 sm:py-8 px-4 text-center shadow-md">
+        <div className="max-w-7xl mx-auto flex flex-col items-center justify-center">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black tracking-tight mb-2 flex items-center justify-center gap-3">
+            <span className="text-2xl sm:text-3xl md:text-4xl">🌸</span>
+            <span>{settings.store_name || 'متجر العطور الفاخرة'}</span>
+          </h1>
+          <p className="text-blue-100 text-xs sm:text-base font-medium max-w-2xl mx-auto">
+            {settings.hero_subtitle || 'اختر عطورك وأكمل طلبك بسهولة مع التوصيل والدفع عند الاستلام'}
+          </p>
         </div>
+      </header>
 
-        {/* Center / Right actions */}
-        <div className="flex items-center gap-2 sm:gap-4">
-          {/* Active selection mini badge */}
-          {selectedPackage && (
+      {/* 2. Top Quick Actions & Tabs Bar */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-2">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 max-w-4xl mx-auto">
+          {/* WhatsApp Contact Button */}
+          <a
+            href={whatsappUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full sm:w-auto px-6 py-2.5 sm:py-3 rounded-full bg-[#22c55e] hover:bg-[#16a34a] text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-xs transition-all active:scale-[0.99] cursor-pointer"
+          >
+            <span>تواصل معنا عبر واتساب</span>
+            <MessageCircle className="w-4 h-4 fill-current" />
+          </a>
+
+          {/* Categories / Counters Tabs */}
+          <div className="w-full sm:w-auto flex items-center justify-center gap-3">
+            {/* Featured / المميزة */}
             <button
+              type="button"
               onClick={() => onScrollToSection('perfumes')}
-              className={`hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-semibold transition-all ${
-                isComplete 
-                  ? 'bg-emerald-950/60 border-emerald-500/40 text-emerald-300' 
-                  : 'bg-amber-950/40 border-amber-500/30 text-amber-300'
-              }`}
+              className="flex-1 sm:flex-initial py-2 sm:py-2.5 px-5 rounded-2xl bg-white border border-gray-200 hover:border-gray-300 text-gray-700 font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-xs transition-all cursor-pointer"
             >
-              <ShoppingBag className="w-3.5 h-3.5" />
-              <span>
-                {selectedPerfumes.length} / {perfumesNeeded} عطور
-              </span>
-              {isComplete && <span className="bg-emerald-500 text-zinc-950 text-[10px] px-1.5 py-0.2 rounded-full font-bold">مكتمل ✓</span>}
+              <span>مميزة</span>
+              <span>👑</span>
             </button>
-          )}
 
-          {/* Direct phone / whatsapp helper */}
-          {settings.phone_number && (
-            <a
-              href={`tel:${settings.phone_number}`}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 hover:text-amber-400 text-xs font-medium transition-colors"
-              title="اتصل بنا مباشرة"
+            {/* Packages / الباكات */}
+            <button
+              type="button"
+              onClick={() => onScrollToSection('packages')}
+              className="flex-1 sm:flex-initial py-2 sm:py-2.5 px-5 rounded-2xl bg-white border-2 border-indigo-500 text-indigo-600 font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-xs transition-all cursor-pointer"
             >
-              <PhoneCall className="w-3.5 h-3.5 text-amber-400" />
-              <span className="hidden md:inline">{settings.phone_number}</span>
-            </a>
-          )}
+              <span className="text-indigo-600 font-bold">{packagesCount || 0}</span>
+              <span>🎁</span>
+              <span>الباكات</span>
+            </button>
+          </div>
         </div>
+
+        {/* Selected Package Banner indicator if active */}
+        {selectedPackage && (
+          <div className="mt-3 max-w-4xl mx-auto p-3.5 bg-indigo-50/90 border border-indigo-100 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-2.5 text-xs sm:text-sm shadow-xs">
+            <div className="flex items-center gap-2 text-indigo-900 font-bold">
+              <span>🎁</span>
+              <span>الباقة المختارة: {selectedPackage.name}</span>
+              <span className="text-indigo-600 font-black">({selectedPerfumes.length} / {perfumesNeeded} عطور)</span>
+            </div>
+            {isComplete ? (
+              <button
+                onClick={onOpenCheckout}
+                className="w-full sm:w-auto px-5 py-2 rounded-xl bg-gradient-to-r from-emerald-600 via-green-600 to-teal-600 text-white font-bold text-xs shadow-xs hover:opacity-95 cursor-pointer flex items-center justify-center gap-1.5"
+              >
+                <span>✓ تأكيد الطلب</span>
+              </button>
+            ) : (
+              <span className="text-amber-800 bg-amber-100/80 px-3 py-1 rounded-lg text-xs font-semibold">
+                حدد {perfumesNeeded - selectedPerfumes.length} عطور متبقية لإكمال الباقة
+              </span>
+            )}
+          </div>
+        )}
       </div>
-    </header>
+    </div>
   );
 };
+
+

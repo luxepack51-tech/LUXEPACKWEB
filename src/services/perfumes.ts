@@ -29,13 +29,14 @@ export async function fetchPerfumes(): Promise<Perfume[]> {
         return true;
       })
       .map((row: any) => {
-        let cat = row.category || row.category_name || '';
-        if (cat === 'women' || cat === 'female' || cat.includes('نسائ') || cat.includes('نساء')) {
-          cat = 'عطور نسائية';
-        } else if (cat === 'men' || cat === 'male' || cat.includes('رجال') || cat.includes('رجل')) {
-          cat = 'عطور رجالية';
-        } else {
-          cat = 'عطور رجالية';
+        const rawCat = row.category || row.category_name || '';
+        let normalizedCat = rawCat;
+        if (rawCat === 'women' || rawCat === 'female' || rawCat.includes('نسائ') || rawCat.includes('نساء')) {
+          normalizedCat = 'عطور نسائية';
+        } else if (rawCat === 'men' || rawCat === 'male' || rawCat.includes('رجال') || rawCat.includes('رجل')) {
+          normalizedCat = 'عطور رجالية';
+        } else if (!normalizedCat) {
+          normalizedCat = 'عطور عامة';
         }
 
         return {
@@ -43,7 +44,7 @@ export async function fetchPerfumes(): Promise<Perfume[]> {
           name: row.name || row.title || 'عطر',
           description: row.description || row.desc || '',
           image_url: row.image_url || row.image || row.photo_url || '',
-          category: cat,
+          category: normalizedCat,
           category_id: row.category_id ? String(row.category_id) : null,
           is_active: true,
           sort_order: Number(row.sort_order ?? row.sort ?? 0)
@@ -183,13 +184,62 @@ export async function deletePerfumeFromDatabase(id: string): Promise<boolean> {
 
 /**
  * Fetches categories dynamically from Supabase `public.categories`.
- * Also merges distinct categories present on active perfumes so all categories are available.
+ * Also extracts distinct categories from the perfumes list if available.
  */
-export async function fetchCategories(_perfumesList: Perfume[] = []): Promise<Category[]> {
+export async function fetchCategories(perfumesList: Perfume[] = []): Promise<Category[]> {
+  if (!supabase) {
+    return [
+      { id: 'men', name: 'عطور رجالية', slug: 'men', is_active: true },
+      { id: 'women', name: 'عطور نسائية', slug: 'women', is_active: true }
+    ];
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('categories')
+      .select('*');
+
+    if (!error && data && data.length > 0) {
+      const activeCategories: Category[] = data
+        .filter((row: any) => {
+          if (row.is_active !== undefined && row.is_active !== null) return Boolean(row.is_active);
+          if (row.active !== undefined && row.active !== null) return Boolean(row.active);
+          return true;
+        })
+        .map((row: any) => ({
+          id: String(row.id),
+          name: row.name || row.name_ar || row.title || 'تصنيف',
+          slug: row.slug || row.code || String(row.id),
+          is_active: true,
+          sort_order: Number(row.sort_order ?? 0)
+        }))
+        .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+
+      if (activeCategories.length > 0) {
+        return activeCategories;
+      }
+    }
+  } catch (err) {
+    console.warn('Exception querying public.categories from Supabase:', err);
+  }
+
+  // If public.categories is empty or not present, extract unique categories from perfumes
+  if (perfumesList && perfumesList.length > 0) {
+    const uniqueCats = Array.from(new Set(perfumesList.map(p => p.category).filter(Boolean)));
+    if (uniqueCats.length > 0) {
+      return uniqueCats.map((cat, idx) => ({
+        id: cat,
+        name: cat,
+        slug: cat,
+        is_active: true,
+        sort_order: idx
+      }));
+    }
+  }
+
   return [
-    { id: 'all', name: 'الكل', slug: 'all', is_active: true },
-    { id: 'women', name: 'عطور نسائية', slug: 'women', is_active: true },
-    { id: 'men', name: 'عطور رجالية', slug: 'men', is_active: true }
+    { id: 'men', name: 'عطور رجالية', slug: 'men', is_active: true },
+    { id: 'women', name: 'عطور نسائية', slug: 'women', is_active: true }
   ];
 }
 

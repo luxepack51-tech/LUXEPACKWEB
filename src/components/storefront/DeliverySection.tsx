@@ -1,14 +1,14 @@
 import React from 'react';
 import { Wilaya, Commune, DeliveryType } from '../../types/storefront';
-import { MapPin, Home, Building2, Truck, Check } from 'lucide-react';
+import { MapPin, Home, Building2, Truck } from 'lucide-react';
 
 interface DeliverySectionProps {
   wilayas: Wilaya[];
   communes: Commune[];
   selectedWilayaId: string;
   selectedCommuneId: string;
-  deliveryType: DeliveryType;
-  deliveryPrice: number;
+  deliveryType: DeliveryType | null;
+  deliveryPrice: number | null;
   isLoadingWilayas: boolean;
   isLoadingCommunes: boolean;
   currency: string;
@@ -32,34 +32,38 @@ export const DeliverySection: React.FC<DeliverySectionProps> = ({
   onDeliveryTypeChange
 }) => {
   const selectedCommune = communes.find(c => String(c.id) === selectedCommuneId);
+  const isCommuneSelected = Boolean(selectedCommuneId && selectedCommune);
+
+  const isHomeAvailable = Boolean(selectedCommune && selectedCommune.home_delivery_available);
+  const isOfficeAvailable = Boolean(selectedCommune && selectedCommune.office_delivery_available);
 
   return (
-    <div id="delivery" className="bg-zinc-900/90 border border-zinc-800 rounded-2xl p-4 sm:p-6 shadow-xl scroll-mt-20">
-      <div className="flex items-center gap-3 mb-6 pb-4 border-b border-zinc-800">
-        <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center border border-amber-500/20">
+    <div id="delivery" className="bg-white border border-gray-100 rounded-3xl p-5 sm:p-6 shadow-sm scroll-mt-20">
+      <div className="flex items-center gap-3 mb-5 pb-3 border-b border-gray-100">
+        <div className="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
           <Truck className="w-5 h-5" />
         </div>
         <div>
-          <h3 className="text-lg sm:text-xl font-bold text-white">3. اختيار مكان وطريقة التوصيل</h3>
-          <p className="text-xs text-zinc-400">اختر الولاية والبلدية لحساب سعر الشحن بدقة</p>
+          <h3 className="text-base sm:text-lg font-bold text-gray-900">اختيار مكان وطريقة التوصيل</h3>
+          <p className="text-xs text-gray-500">حدد الولاية والبلدية لعرض خيارات وتكلفة الشحن بدقة</p>
         </div>
       </div>
 
-      <div className="space-y-5">
+      <div className="space-y-4">
         {/* Wilaya Selection */}
         <div>
-          <label className="block text-xs sm:text-sm font-semibold text-zinc-300 mb-2 flex items-center gap-1.5">
-            <MapPin className="w-4 h-4 text-amber-400" />
+          <label className="block text-xs sm:text-sm font-bold text-gray-800 mb-1.5 flex items-center gap-1.5">
+            <MapPin className="w-4 h-4 text-indigo-600" />
             <span>الولاية:</span>
           </label>
 
           {isLoadingWilayas ? (
-            <div className="h-12 bg-zinc-800/60 rounded-xl animate-pulse"></div>
+            <div className="h-12 bg-gray-100 rounded-2xl animate-pulse"></div>
           ) : (
             <select
               value={selectedWilayaId}
               onChange={(e) => onWilayaChange(e.target.value)}
-              className="w-full h-12 px-4 rounded-xl bg-zinc-950 border border-zinc-800 text-white focus:border-amber-400 focus:outline-none text-sm transition-colors cursor-pointer"
+              className="w-full h-12 px-4 rounded-2xl bg-white border border-gray-300 text-gray-900 focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 outline-none text-sm transition-all cursor-pointer"
             >
               <option value="">-- اختر الولاية --</option>
               {wilayas.map((w, idx) => (
@@ -71,24 +75,26 @@ export const DeliverySection: React.FC<DeliverySectionProps> = ({
           )}
         </div>
 
-        {/* Commune Selection (Only active when Wilaya selected) */}
+        {/* Commune Selection */}
         <div>
-          <label className="block text-xs sm:text-sm font-semibold text-zinc-300 mb-2 flex items-center gap-1.5">
-            <MapPin className="w-4 h-4 text-amber-400" />
+          <label className="block text-xs sm:text-sm font-bold text-gray-800 mb-1.5 flex items-center gap-1.5">
+            <MapPin className="w-4 h-4 text-indigo-600" />
             <span>البلدية:</span>
           </label>
 
           {!selectedWilayaId ? (
-            <div className="p-3 rounded-xl bg-zinc-950/60 border border-zinc-800/80 text-xs text-zinc-500 italic">
-              يرجى تحديد الولاية أولاً لعرض البلدية المتاحة
+            <div className="p-3 rounded-2xl bg-gray-50 border border-gray-200 text-xs text-gray-400">
+              يرجى تحديد الولاية أولاً لعرض البلديات
             </div>
           ) : isLoadingCommunes ? (
-            <div className="h-12 bg-zinc-800/60 rounded-xl animate-pulse"></div>
+            <div className="h-12 bg-gray-50 border border-indigo-100 rounded-2xl flex items-center justify-center text-xs text-indigo-600 font-semibold animate-pulse">
+              جاري تحميل سعر التوصيل...
+            </div>
           ) : (
             <select
               value={selectedCommuneId}
               onChange={(e) => onCommuneChange(e.target.value)}
-              className="w-full h-12 px-4 rounded-xl bg-zinc-950 border border-zinc-800 text-white focus:border-amber-400 focus:outline-none text-sm transition-colors cursor-pointer"
+              className="w-full h-12 px-4 rounded-2xl bg-white border border-gray-300 text-gray-900 focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 outline-none text-sm transition-all cursor-pointer"
             >
               <option value="">-- اختر البلدية --</option>
               {communes.map((c, idx) => (
@@ -100,81 +106,91 @@ export const DeliverySection: React.FC<DeliverySectionProps> = ({
           )}
         </div>
 
-        {/* Delivery Type Toggle Cards (Home vs Office) */}
-        {selectedCommuneId && selectedCommune && (
-          <div className="pt-2">
-            <label className="block text-xs sm:text-sm font-semibold text-zinc-300 mb-3">
-              نوع التوصيل المطلوب:
-            </label>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {/* Home Delivery */}
-              <div
-                onClick={() => onDeliveryTypeChange('home')}
-                className={`p-4 rounded-xl border transition-all cursor-pointer flex items-center justify-between ${
-                  deliveryType === 'home'
-                    ? 'bg-amber-950/50 border-amber-400 text-white shadow-lg'
-                    : 'bg-zinc-950/80 border-zinc-800 text-zinc-400 hover:border-zinc-700'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <div className={`p-2.5 rounded-lg ${deliveryType === 'home' ? 'bg-amber-400 text-zinc-950' : 'bg-zinc-800 text-zinc-400'}`}>
-                    <Home className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-sm text-white">🏠 التوصيل إلى المنزل</h4>
-                    <p className="text-[11px] text-zinc-400">توصيل مباشر إلى باب دارك</p>
-                  </div>
-                </div>
-
-                <div className="text-left">
-                  <span className="font-bold text-amber-400 text-sm block">
-                    {selectedCommune.home_delivery_price} {currency}
-                  </span>
-                  {deliveryType === 'home' && (
-                    <span className="inline-block mt-1 text-[10px] bg-amber-400 text-zinc-950 px-1.5 py-0.2 rounded font-bold">محدد ✓</span>
-                  )}
-                </div>
+        {/* Delivery Type Select */}
+        <div>
+          <label className="block text-xs sm:text-sm font-bold text-gray-800 mb-1.5">
+            نوع التوصيل:
+          </label>
+          <div className="grid grid-cols-2 gap-3">
+            {/* Home Option */}
+            <button
+              type="button"
+              disabled={!isCommuneSelected || !isHomeAvailable}
+              onClick={() => {
+                if (isCommuneSelected && isHomeAvailable) {
+                  onDeliveryTypeChange('home');
+                }
+              }}
+              className={`p-3.5 rounded-2xl border text-right transition-all flex flex-col justify-between min-h-[82px] ${
+                !isCommuneSelected
+                  ? 'border-gray-200 bg-gray-50 text-gray-400 opacity-60 cursor-not-allowed'
+                  : !isHomeAvailable
+                  ? 'border-gray-200 bg-gray-50 text-gray-400 opacity-70 cursor-not-allowed'
+                  : deliveryType === 'home'
+                  ? 'border-2 border-indigo-600 bg-indigo-50/50 text-indigo-950 font-bold shadow-xs cursor-pointer'
+                  : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300 cursor-pointer'
+              }`}
+            >
+              <div className="flex items-center gap-1.5 mb-1">
+                <Home className={`w-4 h-4 ${!isCommuneSelected || !isHomeAvailable ? 'text-gray-400' : 'text-indigo-600'}`} />
+                <span className="text-xs sm:text-sm font-bold">🏠 التوصيل للمنزل</span>
               </div>
+              <span className={`text-xs ${
+                !isCommuneSelected
+                  ? 'text-gray-400 font-normal'
+                  : !isHomeAvailable
+                  ? 'text-red-500 font-bold'
+                  : 'text-indigo-700 font-bold'
+              }`}>
+                {!isCommuneSelected
+                  ? 'اختر البلدية أولاً'
+                  : !isHomeAvailable
+                  ? 'غير متاح'
+                  : `${selectedCommune.home_delivery_price.toLocaleString()} ${currency}`}
+              </span>
+            </button>
 
-              {/* Office Delivery */}
-              <div
-                onClick={() => onDeliveryTypeChange('office')}
-                className={`p-4 rounded-xl border transition-all cursor-pointer flex items-center justify-between ${
-                  deliveryType === 'office'
-                    ? 'bg-amber-950/50 border-amber-400 text-white shadow-lg'
-                    : 'bg-zinc-950/80 border-zinc-800 text-zinc-400 hover:border-zinc-700'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <div className={`p-2.5 rounded-lg ${deliveryType === 'office' ? 'bg-amber-400 text-zinc-950' : 'bg-zinc-800 text-zinc-400'}`}>
-                    <Building2 className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-sm text-white">🏢 التوصيل إلى المكتب</h4>
-                    <p className="text-[11px] text-zinc-400">استلام من مقر شركة الشحن</p>
-                  </div>
-                </div>
-
-                <div className="text-left">
-                  <span className="font-bold text-amber-400 text-sm block">
-                    {selectedCommune.office_delivery_price} {currency}
-                  </span>
-                  {deliveryType === 'office' && (
-                    <span className="inline-block mt-1 text-[10px] bg-amber-400 text-zinc-950 px-1.5 py-0.2 rounded font-bold">محدد ✓</span>
-                  )}
-                </div>
+            {/* Office Option */}
+            <button
+              type="button"
+              disabled={!isCommuneSelected || !isOfficeAvailable}
+              onClick={() => {
+                if (isCommuneSelected && isOfficeAvailable) {
+                  onDeliveryTypeChange('office');
+                }
+              }}
+              className={`p-3.5 rounded-2xl border text-right transition-all flex flex-col justify-between min-h-[82px] ${
+                !isCommuneSelected
+                  ? 'border-gray-200 bg-gray-50 text-gray-400 opacity-60 cursor-not-allowed'
+                  : !isOfficeAvailable
+                  ? 'border-gray-200 bg-gray-50 text-gray-400 opacity-70 cursor-not-allowed'
+                  : deliveryType === 'office'
+                  ? 'border-2 border-indigo-600 bg-indigo-50/50 text-indigo-950 font-bold shadow-xs cursor-pointer'
+                  : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300 cursor-pointer'
+              }`}
+            >
+              <div className="flex items-center gap-1.5 mb-1">
+                <Building2 className={`w-4 h-4 ${!isCommuneSelected || !isOfficeAvailable ? 'text-gray-400' : 'text-indigo-600'}`} />
+                <span className="text-xs sm:text-sm font-bold">🏢 التوصيل للمكتب</span>
               </div>
-            </div>
-
-            {/* Price Banner */}
-            <div className="mt-4 p-3 rounded-xl bg-zinc-950 border border-zinc-800 flex items-center justify-between text-xs text-zinc-300">
-              <span>تكلفة الشحن والتوصيل لهذا الخيار:</span>
-              <span className="font-bold text-amber-400 text-sm">{deliveryPrice} {currency}</span>
-            </div>
+              <span className={`text-xs ${
+                !isCommuneSelected
+                  ? 'text-gray-400 font-normal'
+                  : !isOfficeAvailable
+                  ? 'text-red-500 font-bold'
+                  : 'text-indigo-700 font-bold'
+              }`}>
+                {!isCommuneSelected
+                  ? 'اختر البلدية أولاً'
+                  : !isOfficeAvailable
+                  ? 'غير متاح'
+                  : `${selectedCommune.office_delivery_price.toLocaleString()} ${currency}`}
+              </span>
+            </button>
           </div>
-        )}
+        </div>
       </div>
     </div>
   );
 };
+

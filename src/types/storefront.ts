@@ -41,7 +41,9 @@ export interface Commune {
   name: string;
   name_ar?: string;
   home_delivery_price: number;
+  home_delivery_available: boolean;
   office_delivery_price: number;
+  office_delivery_available: boolean;
   is_active: boolean;
   sort_order?: number;
 }

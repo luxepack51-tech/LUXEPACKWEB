@@ -90,7 +90,9 @@ export async function fetchCommunesByWilaya(wilayaId: string, wilayaName?: strin
         name: row.name || row.name_ar || 'بلدية',
         name_ar: row.name_ar || row.name || 'بلدية',
         home_delivery_price: Number(row.home_delivery_price ?? row.home_price ?? row.delivery_price ?? 0),
+        home_delivery_available: row.home_delivery_available !== undefined && row.home_delivery_available !== null ? Boolean(row.home_delivery_available) : true,
         office_delivery_price: Number(row.office_delivery_price ?? row.office_price ?? row.desk_price ?? 0),
+        office_delivery_available: row.office_delivery_available !== undefined && row.office_delivery_available !== null ? Boolean(row.office_delivery_available) : true,
         is_active: true,
         sort_order: Number(row.sort_order ?? row.sort ?? 0)
       }))
@@ -100,6 +102,64 @@ export async function fetchCommunesByWilaya(wilayaId: string, wilayaName?: strin
   } catch (err) {
     console.error('Exception fetching communes from Supabase:', err);
     return [];
+  }
+}
+
+export async function fetchCommuneById(communeId: string): Promise<Commune | null> {
+  if (!supabase || !communeId) {
+    return null;
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('communes')
+      .select('*')
+      .eq('id', communeId)
+      .maybeSingle();
+
+    if (error || !data) {
+      // If integer id
+      const numId = parseInt(communeId);
+      if (!isNaN(numId)) {
+        const { data: numData, error: numError } = await supabase
+          .from('communes')
+          .select('*')
+          .eq('id', numId)
+          .maybeSingle();
+
+        if (!numError && numData) {
+          return {
+            id: String(numData.id),
+            wilaya_id: String(numData.wilaya_id),
+            name: numData.name || numData.name_ar || 'بلدية',
+            name_ar: numData.name_ar || numData.name || 'بلدية',
+            home_delivery_price: Number(numData.home_delivery_price ?? numData.home_price ?? numData.delivery_price ?? 0),
+            home_delivery_available: numData.home_delivery_available !== undefined && numData.home_delivery_available !== null ? Boolean(numData.home_delivery_available) : true,
+            office_delivery_price: Number(numData.office_delivery_price ?? numData.office_price ?? numData.desk_price ?? 0),
+            office_delivery_available: numData.office_delivery_available !== undefined && numData.office_delivery_available !== null ? Boolean(numData.office_delivery_available) : true,
+            is_active: true,
+            sort_order: Number(numData.sort_order ?? 0)
+          };
+        }
+      }
+      return null;
+    }
+
+    return {
+      id: String(data.id),
+      wilaya_id: String(data.wilaya_id),
+      name: data.name || data.name_ar || 'بلدية',
+      name_ar: data.name_ar || data.name || 'بلدية',
+      home_delivery_price: Number(data.home_delivery_price ?? data.home_price ?? data.delivery_price ?? 0),
+      home_delivery_available: data.home_delivery_available !== undefined && data.home_delivery_available !== null ? Boolean(data.home_delivery_available) : true,
+      office_delivery_price: Number(data.office_delivery_price ?? data.office_price ?? data.desk_price ?? 0),
+      office_delivery_available: data.office_delivery_available !== undefined && data.office_delivery_available !== null ? Boolean(data.office_delivery_available) : true,
+      is_active: true,
+      sort_order: Number(data.sort_order ?? 0)
+    };
+  } catch (err) {
+    console.error('Exception fetching commune by ID from Supabase:', err);
+    return null;
   }
 }
 

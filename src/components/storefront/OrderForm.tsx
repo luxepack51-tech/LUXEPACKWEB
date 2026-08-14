@@ -7,7 +7,7 @@ interface OrderFormProps {
   phone: string;
   address: string;
   notes: string;
-  deliveryType: DeliveryType;
+  deliveryType: DeliveryType | null;
   phoneError: string | null;
   onFullNameChange: (val: string) => void;
   onPhoneChange: (val: string) => void;
@@ -28,63 +28,63 @@ export const OrderForm: React.FC<OrderFormProps> = ({
   onNotesChange
 }) => {
   return (
-    <div className="bg-zinc-900/90 border border-zinc-800 rounded-2xl p-4 sm:p-6 shadow-xl">
-      <div className="flex items-center gap-3 mb-6 pb-4 border-b border-zinc-800">
-        <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center border border-amber-500/20">
+    <div id="order-form" className="bg-white border border-gray-100 rounded-3xl p-5 sm:p-6 shadow-sm scroll-mt-20">
+      <div className="flex items-center gap-3 mb-5 pb-3 border-b border-gray-100">
+        <div className="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
           <User className="w-5 h-5" />
         </div>
         <div>
-          <h3 className="text-lg sm:text-xl font-bold text-white">4. معلومات المستلم والطلب</h3>
-          <p className="text-xs text-zinc-400">يرجى كتابة المعلومات بدقة ليتواصل معك موظف التوصيل</p>
+          <h3 className="text-base sm:text-lg font-bold text-gray-900">معلومات المستلم</h3>
+          <p className="text-xs text-gray-500">يرجى كتابة المعلومات بدقة ليتواصل معك موظف التوصيل</p>
         </div>
       </div>
 
       <div className="space-y-4">
         {/* Full Name */}
         <div>
-          <label className="block text-xs sm:text-sm font-semibold text-zinc-300 mb-1.5 flex items-center gap-1.5">
-            <User className="w-4 h-4 text-amber-400" />
-            <span>الاسم واللقب الكامل <span className="text-red-400">*</span></span>
+          <label className="block text-xs sm:text-sm font-bold text-gray-800 mb-1.5 flex items-center gap-1.5">
+            <User className="w-4 h-4 text-indigo-600" />
+            <span>الاسم الكامل <span className="text-red-500">*</span></span>
           </label>
           <input
             type="text"
             required
-            placeholder="مثال: محمد بن علي"
+            placeholder="مثال: أمينة بن علي"
             value={fullName}
             onChange={(e) => onFullNameChange(e.target.value)}
-            className="w-full h-12 px-4 rounded-xl bg-zinc-950 border border-zinc-800 text-white placeholder-zinc-600 focus:border-amber-400 focus:outline-none text-sm transition-colors"
+            className="w-full h-12 px-4 rounded-2xl bg-white border border-gray-300 text-gray-900 placeholder-gray-400 focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 outline-none text-sm transition-all"
           />
         </div>
 
         {/* Phone Number */}
         <div>
-          <label className="block text-xs sm:text-sm font-semibold text-zinc-300 mb-1.5 flex items-center gap-1.5">
-            <Phone className="w-4 h-4 text-amber-400" />
-            <span>رقم الهاتف <span className="text-red-400">*</span></span>
+          <label className="block text-xs sm:text-sm font-bold text-gray-800 mb-1.5 flex items-center gap-1.5">
+            <Phone className="w-4 h-4 text-indigo-600" />
+            <span>رقم الهاتف <span className="text-red-500">*</span></span>
           </label>
           <input
             type="tel"
             required
             dir="ltr"
-            placeholder="05 / 06 / 07 / 02 xx xx xx xx"
+            placeholder="05XXXXXXXX"
             value={phone}
             onChange={(e) => onPhoneChange(e.target.value)}
-            className={`w-full h-12 px-4 rounded-xl bg-zinc-950 border text-white placeholder-zinc-600 text-left font-mono focus:outline-none text-sm transition-colors ${
-              phoneError ? 'border-red-500' : 'border-zinc-800 focus:border-amber-400'
+            className={`w-full h-12 px-4 rounded-2xl bg-white border text-gray-900 placeholder-gray-400 text-left font-mono focus:ring-1 outline-none text-sm transition-all ${
+              phoneError ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-indigo-600 focus:ring-indigo-600'
             }`}
           />
           {phoneError ? (
-            <p className="text-xs text-red-400 mt-1">{phoneError}</p>
+            <p className="text-xs text-red-500 mt-1 font-medium">{phoneError}</p>
           ) : (
-            <p className="text-[11px] text-zinc-500 mt-1">سنتصل بك هاتفياً قبل شحن الطلب لتأكيد العنوان</p>
+            <p className="text-[11px] text-gray-500 mt-1">سنتصل بك هاتفياً لتأكيد الإرسال</p>
           )}
         </div>
 
         {/* Address */}
         <div>
-          <label className="block text-xs sm:text-sm font-semibold text-zinc-300 mb-1.5 flex items-center gap-1.5">
-            <MapPin className="w-4 h-4 text-amber-400" />
-            <span>العنوان التفصيلي {deliveryType === 'home' && <span className="text-red-400">*</span>}</span>
+          <label className="block text-xs sm:text-sm font-bold text-gray-800 mb-1.5 flex items-center gap-1.5">
+            <MapPin className="w-4 h-4 text-indigo-600" />
+            <span>العنوان التفصيلي {deliveryType === 'home' && <span className="text-red-500">*</span>}</span>
           </label>
           <input
             type="text"
@@ -92,25 +92,26 @@ export const OrderForm: React.FC<OrderFormProps> = ({
             placeholder={deliveryType === 'home' ? "اسم الشارع، الحي، أو بالقرب من معلم معروف" : "عنوان خياري للتوصيل إلى المكتب"}
             value={address}
             onChange={(e) => onAddressChange(e.target.value)}
-            className="w-full h-12 px-4 rounded-xl bg-zinc-950 border border-zinc-800 text-white placeholder-zinc-600 focus:border-amber-400 focus:outline-none text-sm transition-colors"
+            className="w-full h-12 px-4 rounded-2xl bg-white border border-gray-300 text-gray-900 placeholder-gray-400 focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 outline-none text-sm transition-all"
           />
         </div>
 
         {/* Notes */}
         <div>
-          <label className="block text-xs sm:text-sm font-semibold text-zinc-300 mb-1.5 flex items-center gap-1.5">
-            <FileText className="w-4 h-4 text-amber-400" />
+          <label className="block text-xs sm:text-sm font-bold text-gray-800 mb-1.5 flex items-center gap-1.5">
+            <FileText className="w-4 h-4 text-indigo-600" />
             <span>ملاحظات إضافية (اختياري)</span>
           </label>
           <textarea
             rows={2}
-            placeholder="أي توجيهات خاصة بالحي أو وقت الاستلام المفضل..."
+            placeholder="أي توجيهات خاصة بالحي أو وقت الاستلام..."
             value={notes}
             onChange={(e) => onNotesChange(e.target.value)}
-            className="w-full p-3 rounded-xl bg-zinc-950 border border-zinc-800 text-white placeholder-zinc-600 focus:border-amber-400 focus:outline-none text-sm transition-colors resize-none"
+            className="w-full p-3 rounded-2xl bg-white border border-gray-300 text-gray-900 placeholder-gray-400 focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 outline-none text-sm transition-all resize-none"
           />
         </div>
       </div>
     </div>
   );
 };
+
