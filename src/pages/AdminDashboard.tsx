@@ -23,6 +23,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialTab = 'or
   // Orders State
   const [orders, setOrders] = useState<any[]>([]);
   const [isOrdersLoading, setIsOrdersLoading] = useState<boolean>(true);
+  const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
+  const [orderItemsList, setOrderItemsList] = useState<any[]>([]);
+  const [isLoadingOrderItems, setIsLoadingOrderItems] = useState<boolean>(false);
 
   // Perfumes State
   const [perfumes, setPerfumes] = useState<Perfume[]>([]);
@@ -74,6 +77,41 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialTab = 'or
 
     setOrders([...uniqueLocal, ...dbOrders]);
     setIsOrdersLoading(false);
+  };
+
+  const handleViewOrderDetails = async (ord: any) => {
+    setSelectedOrder(ord);
+    setIsLoadingOrderItems(true);
+    let items: any[] = [];
+
+    if (supabase && ord.id) {
+      try {
+        const { data, error } = await supabase
+          .from('order_items')
+          .select('*')
+          .eq('order_id', ord.id);
+
+        if (!error && data && data.length > 0) {
+          items = data;
+        }
+      } catch (e) {
+        console.warn('Error fetching order items:', e);
+      }
+    }
+
+    // Fallback to order's selected_perfumes if local / offline
+    if (items.length === 0 && Array.isArray(ord.selected_perfumes)) {
+      items = ord.selected_perfumes.map((p: any) => ({
+        id: p.id || crypto.randomUUID(),
+        perfume_id: p.category === 'عطور مميزة' ? null : (p.id || null),
+        perfume_name: p.name,
+        category_name: p.category || (p.name?.includes('عطر مميز') ? 'عطور مميزة' : 'عطور'),
+        quantity: p.quantity || 1
+      }));
+    }
+
+    setOrderItemsList(items);
+    setIsLoadingOrderItems(false);
   };
 
   const loadLocalOrders = () => {
@@ -314,11 +352,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialTab = 'or
                       <th className="p-4">المجموع</th>
                       <th className="p-4">الحالة</th>
                       <th className="p-4">التاريخ</th>
+                      <th className="p-4 text-center">الإجراءات</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-zinc-800/80">
                     {orders.map((ord, idx) => (
-                      <tr key={`${ord.id || 'ord'}-${idx}`} className="hover:bg-zinc-800/40 transition-colors">
+                      <tr 
+                        key={`${ord.id || 'ord'}-${idx}`} 
+                        onClick={() => handleViewOrderDetails(ord)}
+                        className="hover:bg-zinc-800/40 transition-colors cursor-pointer"
+                      >
                         <td className="p-4 font-mono font-bold text-amber-400">{ord.order_number || ord.id}</td>
                         <td className="p-4 font-bold text-white">
                           {ord.customer_name}
@@ -346,6 +389,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialTab = 'or
                         </td>
                         <td className="p-4 text-zinc-500 text-xs dir-ltr text-right">
                           {ord.created_at ? new Date(ord.created_at).toLocaleString('ar-DZ') : 'الآن'}
+                        </td>
+                        <td className="p-4 text-center">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleViewOrderDetails(ord);
+                            }}
+                            className="px-3 py-1.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 text-xs font-bold border border-amber-500/30 transition-colors"
+                          >
+                            عرض التفاصيل
+                          </button>
                         </td>
                       </tr>
                     ))}
@@ -567,6 +622,196 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ initialTab = 'or
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+      {/* ORDER DETAILS MODAL */}
+      {selectedOrder && (
+        <div className="fixed inset-0 z-50 bg-zinc-950/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-zinc-900 border border-zinc-700/80 rounded-2xl max-w-xl w-full p-6 shadow-2xl relative my-8 text-white">
+            <div className="flex items-center justify-between pb-4 border-b border-zinc-800">
+              <div>
+                <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                  <Package className="w-5 h-5 text-amber-400" />
+                  <span>تفاصيل الطلب: #{selectedOrder.order_number || selectedOrder.id}</span>
+                </h3>
+                <span className="text-xs text-zinc-400 block mt-0.5">
+                  {selectedOrder.created_at ? new Date(selectedOrder.created_at).toLocaleString('ar-DZ') : 'الآن'}
+                </span>
+              </div>
+              <button
+                onClick={() => {
+                  setSelectedOrder(null);
+                  setOrderItemsList([]);
+                }}
+                className="p-1.5 rounded-lg bg-zinc-800 text-zinc-400 hover:text-white transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="mt-4 space-y-4 text-xs sm:text-sm">
+              {/* Customer Info Card */}
+              <div className="bg-zinc-950/80 p-4 rounded-xl border border-zinc-800 space-y-2">
+                <div className="flex justify-between items-center text-zinc-300">
+                  <span className="text-zinc-400">الاسم واللقب:</span>
+                  <span className="font-bold text-white">{selectedOrder.customer_name}</span>
+                </div>
+                <div className="flex justify-between items-center text-zinc-300">
+                  <span className="text-zinc-400">رقم الهاتف:</span>
+                  <span className="font-bold text-amber-300 dir-ltr text-right">{selectedOrder.phone}</span>
+                </div>
+                <div className="flex justify-between items-center text-zinc-300">
+                  <span className="text-zinc-400">الولاية والبلدية:</span>
+                  <span className="font-semibold text-white">{selectedOrder.wilaya_name} - {selectedOrder.commune_name}</span>
+                </div>
+                {selectedOrder.address && (
+                  <div className="flex justify-between items-center text-zinc-300">
+                    <span className="text-zinc-400">العنوان بالتفصيل:</span>
+                    <span className="text-zinc-300">{selectedOrder.address}</span>
+                  </div>
+                )}
+                <div className="flex justify-between items-center text-zinc-300">
+                  <span className="text-zinc-400">نوع الشحن:</span>
+                  <span className="px-2 py-0.5 rounded bg-zinc-800 text-zinc-300 text-xs">
+                    {selectedOrder.delivery_type === 'home' || selectedOrder.delivery_type === 'المنزل' ? '🏠 توصيل للمنزل' : '🏢 توصيل للمكتب'}
+                  </span>
+                </div>
+                {selectedOrder.notes && (
+                  <div className="pt-2 border-t border-zinc-800/80 text-zinc-400 text-xs">
+                    <span className="text-amber-400/80 font-bold block mb-1">ملاحظات الطلب:</span>
+                    <p className="bg-zinc-900/90 p-2.5 rounded-lg border border-zinc-800 text-zinc-300">{selectedOrder.notes}</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Package & Order Items Info */}
+              <div className="bg-zinc-950/80 p-4 rounded-xl border border-zinc-800 space-y-3">
+                <div className="flex justify-between items-center pb-2 border-b border-zinc-800">
+                  <span className="text-zinc-400 font-bold">باقة الطلب:</span>
+                  <span className="font-bold text-amber-300">{selectedOrder.package_name}</span>
+                </div>
+
+                {isLoadingOrderItems ? (
+                  <div className="py-4 text-center text-zinc-500 text-xs">جاري تحميل عناصر الطلب...</div>
+                ) : (
+                  <div className="space-y-3">
+                    {/* Featured Perfumes Section */}
+                    {orderItemsList.filter(item => 
+                      item.category_name === 'عطور مميزة' || 
+                      !item.perfume_id || 
+                      (typeof item.perfume_name === 'string' && item.perfume_name.includes('عطر مميز'))
+                    ).length > 0 && (
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-1.5 text-amber-400 font-bold text-xs pb-1 border-b border-amber-500/20">
+                          <Sparkles className="w-4 h-4" />
+                          <span>العطور المميزة ✨</span>
+                        </div>
+                        <div className="space-y-1.5 pr-2">
+                          {orderItemsList
+                            .filter(item => 
+                              item.category_name === 'عطور مميزة' || 
+                              !item.perfume_id || 
+                              (typeof item.perfume_name === 'string' && item.perfume_name.includes('عطر مميز'))
+                            )
+                            .map((featItem, idx) => (
+                              <div key={`feat-${featItem.id || idx}`} className="flex justify-between items-center text-xs bg-amber-500/5 p-2 rounded-lg border border-amber-500/10">
+                                <div className="flex items-center gap-2">
+                                  {featItem.image_url && (
+                                    <img
+                                      src={featItem.image_url}
+                                      alt={featItem.perfume_name}
+                                      className="w-8 h-8 rounded-md object-cover border border-amber-500/30 shrink-0"
+                                      referrerPolicy="no-referrer"
+                                    />
+                                  )}
+                                  <span className="font-semibold text-zinc-200">{featItem.perfume_name}</span>
+                                </div>
+                                <span className="text-amber-300 font-bold bg-zinc-900 px-2 py-0.5 rounded text-[11px] border border-amber-500/20">
+                                  الكمية: {featItem.quantity || 1}
+                                </span>
+                              </div>
+                            ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Normal / Package Perfumes Section */}
+                    {orderItemsList.filter(item => 
+                      item.category_name !== 'عطور مميزة' && 
+                      item.perfume_id && 
+                      !(typeof item.perfume_name === 'string' && item.perfume_name.includes('عطر مميز'))
+                    ).length > 0 && (
+                      <div className="space-y-2 pt-1">
+                        <div className="flex items-center gap-1.5 text-zinc-300 font-bold text-xs pb-1 border-b border-zinc-800">
+                          <Package className="w-4 h-4 text-zinc-400" />
+                          <span>عطور الباقة / العطور المختارة 🎁</span>
+                        </div>
+                        <div className="space-y-1.5 pr-2">
+                          {orderItemsList
+                            .filter(item => 
+                              item.category_name !== 'عطور مميزة' && 
+                              item.perfume_id && 
+                              !(typeof item.perfume_name === 'string' && item.perfume_name.includes('عطر مميز'))
+                            )
+                            .map((normItem, idx) => (
+                              <div key={`norm-${normItem.id || idx}`} className="flex justify-between items-center text-xs bg-zinc-900 p-2 rounded-lg border border-zinc-800">
+                                <div className="flex items-center gap-2">
+                                  {normItem.image_url && (
+                                    <img
+                                      src={normItem.image_url}
+                                      alt={normItem.perfume_name}
+                                      className="w-8 h-8 rounded-md object-cover border border-zinc-700 shrink-0"
+                                      referrerPolicy="no-referrer"
+                                    />
+                                  )}
+                                  <div>
+                                    <span className="font-semibold text-zinc-200 block">{normItem.perfume_name}</span>
+                                    {normItem.category_name && (
+                                      <span className="text-[10px] text-zinc-500">{normItem.category_name}</span>
+                                    )}
+                                  </div>
+                                </div>
+                                <span className="text-zinc-400 font-medium bg-zinc-950 px-2 py-0.5 rounded text-[11px]">
+                                  الكمية: {normItem.quantity || 1}
+                                </span>
+                              </div>
+                            ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Fallback if no categorized items */}
+                    {orderItemsList.length === 0 && (
+                      <div className="text-xs text-zinc-500 py-2">
+                        {selectedOrder.perfumes_list || 'لا توجد تفاصيل عطور إضافية مسجلة.'}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Total Card */}
+              <div className="bg-zinc-950 p-4 rounded-xl border border-amber-500/20 flex items-center justify-between text-base font-black">
+                <span className="text-zinc-300 text-sm">المجموع الإجمالي للطلب:</span>
+                <span className="text-amber-400 text-lg sm:text-xl font-black">
+                  {Number(selectedOrder.total_price || 0).toLocaleString()} دج
+                </span>
+              </div>
+            </div>
+
+            <div className="pt-5 flex justify-end">
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedOrder(null);
+                  setOrderItemsList([]);
+                }}
+                className="px-5 py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white font-bold text-xs transition-colors"
+              >
+                إغلاق
+              </button>
+            </div>
           </div>
         </div>
       )}

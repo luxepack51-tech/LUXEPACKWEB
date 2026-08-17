@@ -10,6 +10,7 @@ interface PerfumeSectionProps {
   onTogglePerfume: (perfume: Perfume) => void;
   isLoading: boolean;
   onScrollToDelivery: () => void;
+  onAddPackageToCart?: () => void;
 }
 
 const getCategoryIcon = (catName: string): string => {
@@ -28,22 +29,23 @@ export const PerfumeSection: React.FC<PerfumeSectionProps> = ({
   selectedPerfumes,
   onTogglePerfume,
   isLoading,
-  onScrollToDelivery
+  onScrollToDelivery,
+  onAddPackageToCart
 }) => {
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>('all');
   const [limitWarning, setLimitWarning] = useState<string | null>(null);
 
-  // Default to first category (e.g. men or all) when categories load
+  // Default to women's category when categories load or when a package is selected
   useEffect(() => {
-    if (categories && categories.length > 0 && selectedCategoryId === 'all') {
-      const menCat = categories.find(c => c.name.includes('رجال') || c.id === 'men');
-      if (menCat) {
-        setSelectedCategoryId(menCat.id);
+    if (categories && categories.length > 0) {
+      const womenCat = categories.find(c => c.name.includes('نسائ') || c.name.includes('نساء') || c.id === 'women' || c.slug === 'women');
+      if (womenCat) {
+        setSelectedCategoryId(womenCat.id);
       } else {
         setSelectedCategoryId(categories[0].id);
       }
     }
-  }, [categories]);
+  }, [categories, selectedPackage?.id]);
 
   const requiredCount = selectedPackage ? selectedPackage.perfumes_count : 0;
   const currentCount = selectedPerfumes.length;
@@ -267,13 +269,15 @@ export const PerfumeSection: React.FC<PerfumeSectionProps> = ({
             </p>
           </div>
 
-          <button
-            type="button"
-            onClick={onScrollToDelivery}
-            className="w-full sm:w-auto px-7 py-3.5 rounded-2xl bg-gradient-to-r from-emerald-600 via-green-600 to-teal-600 hover:from-emerald-700 hover:to-green-700 text-white font-black text-sm sm:text-base shadow-md shadow-emerald-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer whitespace-nowrap flex items-center justify-center gap-2"
-          >
-            <span>✓ تأكيد الطلب</span>
-          </button>
+          <div className="w-full sm:w-auto flex items-center justify-end">
+            <button
+              type="button"
+              onClick={onScrollToDelivery}
+              className="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-gradient-to-r from-emerald-600 via-green-600 to-teal-600 hover:from-emerald-700 hover:to-green-700 text-white font-black text-sm sm:text-base shadow-md shadow-emerald-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer whitespace-nowrap flex items-center justify-center gap-2"
+            >
+              <span>✓ تأكيد الطلب وإكمال التوصيل</span>
+            </button>
+          </div>
         </div>
       )}
     </section>

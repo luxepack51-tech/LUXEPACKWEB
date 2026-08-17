@@ -1,6 +1,7 @@
 import React from 'react';
 import { Package, Perfume, DeliveryType } from '../../types/storefront';
-import { ShoppingCart, Check, ShieldCheck, Loader2 } from 'lucide-react';
+import { ShoppingCart, Check, ShieldCheck, Loader2, Tag } from 'lucide-react';
+import { useCart } from '../../context/CartContext';
 
 interface OrderSummaryStickyProps {
   selectedPackage: Package | null;
@@ -31,8 +32,22 @@ export const OrderSummarySticky: React.FC<OrderSummaryStickyProps> = ({
   validationMessage,
   onSubmitOrder
 }) => {
+  const { 
+    cartItems, 
+    featuredSubtotal,
+    packageSubtotal,
+    totalFeaturedQuantity,
+    featuredDiscount, 
+    openCart 
+  } = useCart();
+
   const packagePrice = selectedPackage ? selectedPackage.price : 0;
   const perfumesNeeded = selectedPackage ? selectedPackage.perfumes_count : 0;
+  
+  // Strictly separate featured perfumes from packages
+  const featuredItems = cartItems.filter(item => item.type === 'featured_perfume');
+  const packageItemsInCart = cartItems.filter(item => item.type === 'package');
+  const totalPackagesPrice = packageSubtotal + packagePrice;
 
   return (
     <div className="bg-white border border-gray-100 rounded-3xl p-5 shadow-sm sticky top-24">
@@ -47,21 +62,102 @@ export const OrderSummarySticky: React.FC<OrderSummaryStickyProps> = ({
       </div>
 
       <div className="space-y-3 text-xs sm:text-sm">
-        {/* Package Selected */}
-        <div className="flex items-center justify-between py-1.5 border-b border-gray-100">
-          <span className="text-gray-500">الباقة المختارة:</span>
-          <span className="font-bold text-gray-900 text-right">
-            {selectedPackage ? selectedPackage.name : <span className="text-gray-400 italic">لم تُحدد بعد</span>}
-          </span>
-        </div>
+        {/* 1. Featured Perfumes Section (Only if featured perfumes are in cart) */}
+        {featuredItems.length > 0 && (
+          <div className="space-y-2 pb-3 border-b border-gray-100">
+            <div className="flex items-center justify-between">
+              <span className="font-bold text-gray-700 flex items-center gap-1">
+                <span>🌸</span>
+                <span>العطور المميزة المختارة ({totalFeaturedQuantity}):</span>
+              </span>
+              <button 
+                type="button" 
+                onClick={openCart}
+                className="text-xs text-indigo-600 hover:text-indigo-800 underline font-bold cursor-pointer"
+              >
+                تعديل
+              </button>
+            </div>
+            <div className="max-h-36 overflow-y-auto space-y-1.5 bg-gray-50/70 p-2.5 rounded-2xl border border-gray-100">
+              {featuredItems.map((item, idx) => (
+                <div key={item.id || idx} className="flex items-center justify-between text-xs text-gray-700">
+                  <span className="truncate max-w-[170px] font-medium">
+                    {item.name} <span className="text-gray-500 text-[11px]">× {item.quantity}</span>
+                  </span>
+                  <span className="font-bold text-gray-900 shrink-0">
+                    {(item.unit_price * item.quantity).toLocaleString()} {currency}
+                  </span>
+                </div>
+              ))}
+            </div>
 
-        {/* Selected Perfumes count */}
-        <div className="flex items-center justify-between py-1.5 border-b border-gray-100">
-          <span className="text-gray-500">العطور المختارة:</span>
-          <span className={`font-bold ${selectedPerfumes.length === perfumesNeeded && perfumesNeeded > 0 ? 'text-emerald-600' : 'text-indigo-600'}`}>
-            {selectedPerfumes.length} / {perfumesNeeded} عطور
-          </span>
-        </div>
+            {featuredDiscount > 0 && (
+              <div className="flex items-center justify-between text-emerald-700 font-bold bg-emerald-50 px-2.5 py-1 rounded-xl border border-emerald-200/60 text-xs">
+                <span className="flex items-center gap-1">
+                  <Tag className="w-3 h-3 text-emerald-600" />
+                  <span>خصم عطرين فأكثر (20%):</span>
+                </span>
+                <span>-{featuredDiscount.toLocaleString()} {currency}</span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* 2. Packages from Cart (if any) */}
+        {packageItemsInCart.length > 0 && (
+          <div className="space-y-2 pb-3 border-b border-gray-100">
+            {packageItemsInCart.map((pkgItem, idx) => (
+              <div key={pkgItem.id || idx} className="space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-gray-800 flex items-center gap-1">
+                    <span>🎁</span>
+                    <span>{pkgItem.name} <span className="text-gray-500 text-xs font-normal">× {pkgItem.quantity}</span>:</span>
+                  </span>
+                  <span className="font-bold text-gray-900">
+                    {(pkgItem.unit_price * pkgItem.quantity).toLocaleString()} {currency}
+                  </span>
+                </div>
+                {pkgItem.selected_perfumes && pkgItem.selected_perfumes.length > 0 && (
+                  <div className="text-[11px] text-gray-500 pr-4">
+                    {pkgItem.selected_perfumes.map(p => p.name).join(' + ')}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* 3. On-Screen Selected Package (if active) */}
+        {selectedPackage && (
+          <div className="space-y-2 pb-2 border-b border-gray-100">
+            <div className="flex items-center justify-between py-1">
+              <span className="text-gray-600 font-medium">الباقة المختارة:</span>
+              <span className="font-bold text-gray-900 text-right">
+                {selectedPackage.name}
+              </span>
+            </div>
+
+            <div className="flex items-center justify-between py-1">
+              <span className="text-gray-600 font-medium">العطور المختارة:</span>
+              <span className={`font-bold ${selectedPerfumes.length === perfumesNeeded && perfumesNeeded > 0 ? 'text-emerald-600' : 'text-indigo-600'}`}>
+                {selectedPerfumes.length} / {perfumesNeeded} عطور
+              </span>
+            </div>
+
+            {selectedPerfumes.length > 0 && (
+              <div className="text-[11px] text-gray-500">
+                {selectedPerfumes.map(p => p.name).join(' + ')}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* When nothing is selected yet */}
+        {featuredItems.length === 0 && packageItemsInCart.length === 0 && !selectedPackage && (
+          <div className="py-2 border-b border-gray-100 text-gray-400 italic text-center">
+            لم يتم اختيار منتجات بعد
+          </div>
+        )}
 
         {/* Destination */}
         <div className="flex items-center justify-between py-1.5 border-b border-gray-100">
@@ -73,10 +169,26 @@ export const OrderSummarySticky: React.FC<OrderSummaryStickyProps> = ({
 
         {/* Price Breakdown */}
         <div className="space-y-1.5 pt-2">
-          <div className="flex items-center justify-between text-gray-600">
-            <span>سعر الباقة:</span>
-            <span className="font-bold text-gray-900">{packagePrice.toLocaleString()} {currency}</span>
-          </div>
+          {totalPackagesPrice > 0 && (
+            <div className="flex items-center justify-between text-gray-600">
+              <span>مجموع الباقات:</span>
+              <span className="font-bold text-gray-900">{totalPackagesPrice.toLocaleString()} {currency}</span>
+            </div>
+          )}
+
+          {featuredSubtotal > 0 && (
+            <div className="flex items-center justify-between text-gray-600">
+              <span>مجموع العطور المميزة:</span>
+              <span className="font-bold text-gray-900">{featuredSubtotal.toLocaleString()} {currency}</span>
+            </div>
+          )}
+
+          {featuredDiscount > 0 && (
+            <div className="flex items-center justify-between text-emerald-700 font-bold text-xs bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-200/60">
+              <span>خصم العطور المميزة (20%):</span>
+              <span>-{featuredDiscount.toLocaleString()} {currency}</span>
+            </div>
+          )}
 
           <div className="flex items-center justify-between text-gray-600">
             <span>سعر التوصيل:</span>
@@ -138,4 +250,3 @@ export const OrderSummarySticky: React.FC<OrderSummaryStickyProps> = ({
     </div>
   );
 };
-

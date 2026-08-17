@@ -1,3 +1,46 @@
+export interface CartItem {
+  id: string; // Unique cart identifier
+  type: 'package' | 'featured_perfume';
+  name: string;
+  image_url?: string;
+  unit_price: number;
+  quantity: number;
+  
+  // For packages
+  package_id?: string;
+  selected_perfumes?: Array<{ id: string; name: string; image_url?: string; category?: string }>;
+  perfumes_count?: number;
+
+  // For featured perfumes
+  featured_perfume_id?: string;
+  gender?: 'women' | 'men' | string;
+  description?: string | null;
+}
+
+export interface CartCalculation {
+  packageSubtotal: number;
+  featuredSubtotal: number;
+  totalFeaturedQuantity: number;
+  featuredDiscount: number;
+  productsSubtotal: number;
+  productsTotal: number;
+  totalItemsCount: number;
+  isDiscountActive: boolean;
+}
+
+export interface FeaturedPerfume {
+  id: string;
+  name: string;
+  image_url: string;
+  price: number;
+  gender: 'women' | 'men' | string;
+  description?: string | null;
+  active: boolean;
+  sort_order: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export interface Package {
   id: string;
   name: string;
@@ -76,7 +119,14 @@ export interface OrderPayload {
   package_id: string;
   package_name: string;
   package_price: number;
-  selected_perfumes: Array<{ id: string; name: string; image_url?: string; category?: string }>;
+  selected_perfumes: Array<{
+    id: string;
+    name: string;
+    image_url?: string;
+    category?: string;
+    quantity?: number;
+    type?: string;
+  }>;
   delivery_price: number;
   total_price: number;
   status: string;

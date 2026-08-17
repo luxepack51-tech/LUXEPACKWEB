@@ -55,7 +55,7 @@ export const PackageSection: React.FC<PackageSectionProps> = ({
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-5">
             {packages.map((pkg, idx) => {
               const isSelected = selectedPackage?.id === pkg.id;
-              const isPopular = pkg.perfumes_count === 3 || idx === 1;
+              const isPopular = pkg.perfumes_count === 5 || pkg.name.includes('5') || pkg.name.includes('خمسة') || pkg.name.includes('٥');
 
               return (
                 <button
@@ -65,13 +65,16 @@ export const PackageSection: React.FC<PackageSectionProps> = ({
                   className={`group relative rounded-2xl p-3.5 sm:p-5 text-center transition-all duration-200 cursor-pointer flex flex-col items-center justify-between gap-2.5 ${
                     isSelected
                       ? 'border-2 border-indigo-600 bg-gradient-to-b from-indigo-50/70 to-white shadow-md shadow-indigo-500/10 ring-2 ring-indigo-500/20 scale-[1.02]'
+                      : isPopular
+                      ? 'border-2 border-amber-300/80 bg-gradient-to-b from-amber-50/40 to-white hover:border-amber-400 hover:shadow-md'
                       : 'border border-gray-200/80 bg-white hover:border-indigo-300 hover:shadow-sm hover:bg-gray-50/50'
                   }`}
                 >
                   {/* Badge */}
                   {isPopular && !isSelected && (
-                    <span className="absolute -top-2.5 right-4 px-2 py-0.5 rounded-full bg-amber-500 text-white font-bold text-[10px] shadow-xs">
-                      الأكثر طلباً ⭐
+                    <span className="absolute -top-2.5 right-4 px-2.5 py-0.5 rounded-full bg-gradient-to-r from-amber-500 via-amber-600 to-orange-500 text-white font-black text-[10px] shadow-sm flex items-center gap-1">
+                      <span>⭐</span>
+                      <span>الأكثر طلباً</span>
                     </span>
                   )}
                   {isSelected && (

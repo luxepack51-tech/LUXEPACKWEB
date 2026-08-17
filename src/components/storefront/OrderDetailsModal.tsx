@@ -1,12 +1,16 @@
 import React from 'react';
-import { Package, Perfume, Wilaya, Commune, DeliveryType } from '../../types/storefront';
-import { Loader2 } from 'lucide-react';
+import { Package, Perfume, Wilaya, Commune, DeliveryType, CartItem, FeaturedPerfume } from '../../types/storefront';
+import { Loader2, Tag, ShoppingCart, Trash2 } from 'lucide-react';
+import { useCart } from '../../context/CartContext';
 
 interface OrderDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
   selectedPackage: Package | null;
   selectedPerfumes: Perfume[];
+  directOrderPerfume?: FeaturedPerfume | null;
+  customTitle?: string;
+  customPrice?: number;
   wilayas: Wilaya[];
   communes: Commune[];
   selectedWilayaId: string;
@@ -36,6 +40,9 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
   onClose,
   selectedPackage,
   selectedPerfumes,
+  directOrderPerfume,
+  customTitle,
+  customPrice,
   wilayas,
   communes,
   selectedWilayaId,
@@ -59,16 +66,26 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
   onPhoneChange,
   onSubmitOrder
 }) => {
-  if (!isOpen) return null;
+  const { 
+    cartItems, 
+    packageSubtotal, 
+    featuredSubtotal, 
+    featuredDiscount, 
+    productsTotal, 
+    totalItemsCount,
+    isDiscountActive 
+  } = useCart();
 
-  const packagePrice = selectedPackage ? selectedPackage.price : 0;
-  const perfumesCount = selectedPackage ? selectedPackage.perfumes_count : selectedPerfumes.length;
+  if (!isOpen) return null;
 
   const selectedCommune = communes.find(c => String(c.id) === selectedCommuneId);
   const isCommuneSelected = Boolean(selectedCommuneId && selectedCommune);
 
+  // Determine if we are rendering unified cart or single package/item fallback
+  const hasCartItems = !directOrderPerfume && cartItems.length > 0;
+
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/50 backdrop-blur-xs animate-fade-in">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-xs animate-fade-in">
       <div
         className="w-full max-w-lg bg-white rounded-t-3xl sm:rounded-3xl p-5 sm:p-6 max-h-[92vh] overflow-y-auto shadow-2xl animate-slide-up border border-gray-100 text-right"
         dir="rtl"
@@ -79,30 +96,103 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
         {/* Modal Title */}
         <h2 className="text-xl sm:text-2xl font-black text-gray-900 text-center mb-4 flex items-center justify-center gap-2">
           <span>📦</span>
-          <span>تفاصيل الطلب</span>
+          <span>تأكيد تفاصيل الطلب</span>
         </h2>
 
         {/* 1. Order Summary Card ("ملخص طلبك") */}
-        <div className="bg-[#f8fafc] border border-gray-200/70 rounded-2xl p-4 mb-4">
-          <h3 className="font-bold text-gray-800 text-sm mb-3">ملخص طلبك</h3>
+        <div className="bg-[#f8fafc] border border-gray-200/80 rounded-2xl p-4 mb-4 space-y-3">
+          <div className="flex items-center justify-between border-b border-gray-200/60 pb-2">
+            <h3 className="font-bold text-gray-900 text-sm flex items-center gap-1.5">
+              <ShoppingCart className="w-4 h-4 text-indigo-600" />
+              <span>محتويات طلبك</span>
+            </h3>
+            <span className="text-[11px] px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 font-bold">
+              {directOrderPerfume ? 'طلب مباشر (عطر مميز)' : (hasCartItems ? `${totalItemsCount} عناصر` : (selectedPackage ? 'باقة واحدة' : 'عطر واحد'))}
+            </span>
+          </div>
 
-          <div className="space-y-2 text-sm text-gray-700">
-            {/* Package Row */}
-            <div className="flex items-center justify-between">
-              <span className="flex items-center gap-1.5 font-medium">
-                <span>🎁</span>
-                <span>الباك ({perfumesCount} عطور)</span>
-              </span>
-              <span className="font-bold text-gray-900">
-                {packagePrice.toLocaleString()} {currency}
-              </span>
-            </div>
+          {/* Items List */}
+          <div className="max-h-40 overflow-y-auto space-y-2 text-xs divide-y divide-gray-100">
+            {directOrderPerfume ? (
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2.5">
+                  {directOrderPerfume.image_url && (
+                    <img
+                      src={directOrderPerfume.image_url}
+                      alt={directOrderPerfume.name}
+                      className="w-10 h-10 object-contain rounded-lg border border-gray-100 bg-white"
+                    />
+                  )}
+                  <div>
+                    <span className="font-bold text-gray-900">⭐ {directOrderPerfume.name}</span>
+                    <div className="text-[10px] text-indigo-600 font-semibold mt-0.5">عطر مميز فاخر × 1</div>
+                  </div>
+                </div>
+                <span className="font-bold text-indigo-700">{directOrderPerfume.price.toLocaleString()} {currency}</span>
+              </div>
+            ) : (
+              <>
+                {hasCartItems && cartItems.map((item, idx) => (
+                  <div key={item.id || idx} className="pt-2 first:pt-0 flex items-start justify-between gap-2">
+                    <div>
+                      <div className="font-bold text-gray-900 flex items-center gap-1">
+                        <span>{item.type === 'package' ? '🎁' : '🌸'}</span>
+                        <span>{item.name}</span>
+                        <span className="text-gray-500 font-normal">× {item.quantity}</span>
+                      </div>
+                      {item.type === 'package' && item.selected_perfumes && item.selected_perfumes.length > 0 && (
+                        <div className="text-[10px] text-gray-500 mt-0.5">
+                          {item.selected_perfumes.map(p => p.name).join('، ')}
+                        </div>
+                      )}
+                    </div>
+                    <span className="font-bold text-gray-800 shrink-0">
+                      {(item.unit_price * item.quantity).toLocaleString()} {currency}
+                    </span>
+                  </div>
+                ))}
+
+                {selectedPackage && (
+                  <div className={`flex items-center justify-between ${hasCartItems ? 'pt-2 border-t border-gray-100' : ''}`}>
+                    <div>
+                      <span className="font-bold text-gray-900">🎁 {selectedPackage.name}</span>
+                      {selectedPerfumes.length > 0 && (
+                        <div className="text-[10px] text-gray-500 mt-0.5">
+                          {selectedPerfumes.map(p => p.name).join('، ')}
+                        </div>
+                      )}
+                    </div>
+                    <span className="font-bold text-gray-900">{selectedPackage.price.toLocaleString()} {currency}</span>
+                  </div>
+                )}
+
+                {!hasCartItems && !selectedPackage && (
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-gray-900">{customTitle || 'عطر مميز'}</span>
+                    <span className="font-bold text-gray-900">{(customPrice || 0).toLocaleString()} {currency}</span>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+
+          {/* Subtotals & Discounts Breakdown */}
+          <div className="pt-2 border-t border-gray-200/80 space-y-1.5 text-xs text-gray-700">
+            {hasCartItems && featuredDiscount > 0 && (
+              <div className="flex items-center justify-between text-emerald-700 font-bold bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-200/60">
+                <span className="flex items-center gap-1">
+                  <Tag className="w-3.5 h-3.5" />
+                  <span>خصم العطور المميزة (20%):</span>
+                </span>
+                <span>-{featuredDiscount.toLocaleString()} {currency}</span>
+              </div>
+            )}
 
             {/* Delivery Row */}
             <div className="flex items-center justify-between">
               <span className="flex items-center gap-1.5 font-medium">
                 <span>🚚</span>
-                <span>التوصيل</span>
+                <span>سعر التوصيل:</span>
               </span>
               <span className="font-bold text-gray-900">
                 {deliveryPrice !== null ? (
@@ -113,11 +203,11 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
               </span>
             </div>
 
-            {/* Divider */}
-            <div className="border-t border-gray-200/80 my-2 pt-2 flex items-center justify-between text-base">
-              <span className="flex items-center gap-1.5 font-bold text-gray-900">
+            {/* Total Row */}
+            <div className="border-t border-gray-200/80 pt-2 flex items-center justify-between text-base">
+              <span className="flex items-center gap-1.5 font-black text-gray-900">
                 <span>💰</span>
-                <span>الإجمالي</span>
+                <span>الإجمالي النهائي:</span>
               </span>
               <span className="text-xl font-black text-[#2563eb]">
                 {totalPrice.toLocaleString()} {currency}
@@ -283,7 +373,7 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
           ) : (
             <>
               <span>✓</span>
-              <span>تأكيد الطلب</span>
+              <span>تأكيد الطلب ({totalPrice.toLocaleString()} {currency})</span>
             </>
           )}
         </button>

@@ -151,18 +151,72 @@ export async function createOrder(payload: OrderPayload): Promise<OrderCreationR
     // Insert selected perfumes into order_items table
     if (payload.selected_perfumes && payload.selected_perfumes.length > 0) {
       try {
-        const itemsToInsert = payload.selected_perfumes.map(perf => ({
-          id: crypto.randomUUID(),
-          order_id: orderId,
-          perfume_id: isUuid(perf.id) ? perf.id : null,
-          perfume_name: perf.name,
-          quantity: 1
-        }));
+        const itemsToInsert = payload.selected_perfumes.map((perf: any) => {
+          const isFeaturedPerfume =
+            perf.category === 'عطور مميزة' ||
+            perf.category_name === 'عطور مميزة' ||
+            perf.type === 'featured' ||
+            perf.type === 'featured_perfume' ||
+            (typeof perf.name === 'string' && perf.name.includes('(عطر مميز'));
+
+          // Extract quantity
+          let itemQuantity = Number(perf.quantity) || 1;
+          if (!perf.quantity && typeof perf.name === 'string') {
+            const qtyMatch = perf.name.match(/\(عطر مميز\s*×\s*(\d+)\)/);
+            if (qtyMatch && qtyMatch[1]) {
+              itemQuantity = parseInt(qtyMatch[1], 10) || 1;
+            }
+          }
+
+          // Clean perfume name (remove quantity suffix like "(عطر مميز × 1)")
+          let cleanName = typeof perf.name === 'string' ? perf.name.trim() : '';
+          if (isFeaturedPerfume) {
+            cleanName = cleanName.replace(/\s*\(عطر مميز(?:\s*×\s*\d+)?\)\s*/g, '').trim();
+          }
+
+          if (isFeaturedPerfume) {
+            const featuredItem = {
+              id: crypto.randomUUID(),
+              order_id: orderId,
+              perfume_id: null,
+              perfume_name: cleanName || perf.name,
+              category_name: 'عطور مميزة',
+              quantity: itemQuantity,
+              image_url: perf.image_url || null
+            };
+
+            console.log('[ORDER DEBUG] FEATURED ORDER ITEM:', featuredItem);
+            console.log('[ORDER DEBUG] FEATURED IMAGE URL:', featuredItem.image_url);
+
+            return featuredItem;
+          }
+
+          const normalItem = {
+            id: crypto.randomUUID(),
+            order_id: orderId,
+            perfume_id: isUuid(perf.id) ? perf.id : null,
+            perfume_name: perf.name,
+            category_name: perf.category || perf.category_name || null,
+            quantity: itemQuantity,
+            image_url: perf.image_url || null
+          };
+
+          console.log('[ORDER DEBUG] NORMAL ORDER ITEM:', normalItem);
+
+          return normalItem;
+        });
+
+        console.log('[ORDER ITEMS] INSERT PAYLOAD:', itemsToInsert);
 
         if (itemsToInsert.length > 0) {
-          const { error: itemsError } = await supabase
+          const { data, error: itemsError } = await supabase
             .from('order_items')
             .insert(itemsToInsert);
+
+          console.log('[ORDER DEBUG] ORDER ITEMS INSERT RESULT:', {
+            data,
+            error: itemsError
+          });
 
           if (itemsError) {
             console.warn('[ORDER DEBUG] order_items insert error:', itemsError);

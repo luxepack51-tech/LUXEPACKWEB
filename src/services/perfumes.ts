@@ -50,7 +50,13 @@ export async function fetchPerfumes(): Promise<Perfume[]> {
           sort_order: Number(row.sort_order ?? row.sort ?? 0)
         };
       })
-      .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+      .sort((a, b) => {
+        const aIsWomen = a.category.includes('نسائ') || a.category.includes('نساء');
+        const bIsWomen = b.category.includes('نسائ') || b.category.includes('نساء');
+        if (aIsWomen && !bIsWomen) return -1;
+        if (!aIsWomen && bIsWomen) return 1;
+        return (a.sort_order ?? 0) - (b.sort_order ?? 0);
+      });
 
     return activePerfumes;
   } catch (err) {
@@ -187,10 +193,20 @@ export async function deletePerfumeFromDatabase(id: string): Promise<boolean> {
  * Also extracts distinct categories from the perfumes list if available.
  */
 export async function fetchCategories(perfumesList: Perfume[] = []): Promise<Category[]> {
+  const sortCategoriesWomenFirst = (cats: Category[]): Category[] => {
+    return [...cats].sort((a, b) => {
+      const aIsWomen = a.name.includes('نسائ') || a.name.includes('نساء') || a.slug === 'women' || a.id === 'women';
+      const bIsWomen = b.name.includes('نسائ') || b.name.includes('نساء') || b.slug === 'women' || b.id === 'women';
+      if (aIsWomen && !bIsWomen) return -1;
+      if (!aIsWomen && bIsWomen) return 1;
+      return (a.sort_order ?? 0) - (b.sort_order ?? 0);
+    });
+  };
+
   if (!supabase) {
     return [
-      { id: 'men', name: 'عطور رجالية', slug: 'men', is_active: true },
-      { id: 'women', name: 'عطور نسائية', slug: 'women', is_active: true }
+      { id: 'women', name: 'عطور نسائية', slug: 'women', is_active: true },
+      { id: 'men', name: 'عطور رجالية', slug: 'men', is_active: true }
     ];
   }
 
@@ -212,11 +228,10 @@ export async function fetchCategories(perfumesList: Perfume[] = []): Promise<Cat
           slug: row.slug || row.code || String(row.id),
           is_active: true,
           sort_order: Number(row.sort_order ?? 0)
-        }))
-        .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+        }));
 
       if (activeCategories.length > 0) {
-        return activeCategories;
+        return sortCategoriesWomenFirst(activeCategories);
       }
     }
   } catch (err) {
@@ -227,19 +242,20 @@ export async function fetchCategories(perfumesList: Perfume[] = []): Promise<Cat
   if (perfumesList && perfumesList.length > 0) {
     const uniqueCats = Array.from(new Set(perfumesList.map(p => p.category).filter(Boolean)));
     if (uniqueCats.length > 0) {
-      return uniqueCats.map((cat, idx) => ({
+      const mappedCats = uniqueCats.map((cat, idx) => ({
         id: cat,
         name: cat,
         slug: cat,
         is_active: true,
         sort_order: idx
       }));
+      return sortCategoriesWomenFirst(mappedCats);
     }
   }
 
   return [
-    { id: 'men', name: 'عطور رجالية', slug: 'men', is_active: true },
-    { id: 'women', name: 'عطور نسائية', slug: 'women', is_active: true }
+    { id: 'women', name: 'عطور نسائية', slug: 'women', is_active: true },
+    { id: 'men', name: 'عطور رجالية', slug: 'men', is_active: true }
   ];
 }
 

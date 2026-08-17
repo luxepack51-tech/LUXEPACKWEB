@@ -14,10 +14,16 @@ export default function App() {
     return () => window.removeEventListener('popstate', handleLocationChange);
   }, []);
 
+  const handleNavigate = (path: string) => {
+    window.history.pushState({}, '', path);
+    setCurrentPath(path);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   if (currentPath.startsWith('/dashboard') || window.location.search.includes('admin=true')) {
     const isPerfumesRoute = currentPath.includes('/perfumes');
     return <AdminDashboard initialTab={isPerfumesRoute ? 'perfumes' : 'orders'} />;
   }
 
-  return <StorefrontPage />;
+  return <StorefrontPage onNavigate={handleNavigate} />;
 }
