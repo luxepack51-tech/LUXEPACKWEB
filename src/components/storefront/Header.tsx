@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Sparkles, MessageCircle, ShoppingBag, ShoppingCart, ShieldCheck } from 'lucide-react';
 import { StoreSettings, Package, Perfume } from '../../types/storefront';
 import { useCart } from '../../context/CartContext';
@@ -8,9 +8,8 @@ interface HeaderProps {
   selectedPackage?: Package | null;
   selectedPerfumes?: Perfume[];
   packagesCount?: number;
-  shopMode?: 'packages' | 'featured';
-  onSelectShopMode?: (mode: 'packages' | 'featured') => void;
-  onScrollToSection?: (sectionId: string) => void;
+  activeSection?: 'packages' | 'featured';
+  onNavigateSection?: (section: 'packages' | 'featured') => void;
   onOpenCheckout?: () => void;
   onAddCurrentPackageToCart?: () => void;
 }
@@ -20,18 +19,17 @@ export const Header: React.FC<HeaderProps> = ({
   selectedPackage = null,
   selectedPerfumes = [],
   packagesCount = 0,
-  shopMode = 'packages',
-  onSelectShopMode,
-  onScrollToSection,
+  activeSection = 'packages',
+  onNavigateSection,
   onOpenCheckout,
   onAddCurrentPackageToCart
 }) => {
-  const { totalItemsCount, openCart, itemJustAdded, productsTotal } = useCart();
+  const { totalItemsCount, openCart } = useCart();
   const perfumesNeeded = selectedPackage ? selectedPackage.perfumes_count : 0;
   const isComplete = selectedPackage && selectedPerfumes.length === perfumesNeeded;
 
-  const isFeaturedActive = shopMode === 'featured';
-  const isPackagesActive = shopMode === 'packages';
+  const isPackagesActive = activeSection === 'packages';
+  const isFeaturedActive = activeSection === 'featured';
 
   const rawWhatsapp = settings.whatsapp_number || settings.phone_number || '213796161396';
   let cleanWhatsapp = rawWhatsapp.replace(/[^0-9]/g, '');
@@ -43,30 +41,36 @@ export const Header: React.FC<HeaderProps> = ({
   }
   const whatsappUrl = `https://wa.me/${cleanWhatsapp || '213796161396'}?text=${encodeURIComponent('مرحباً! أود الاستفسار بخصوص عطور المتجر.')}`;
 
-  const handleFeaturedClick = () => {
-    if (onSelectShopMode) {
-      onSelectShopMode('featured');
+  const handlePackagesClick = () => {
+    if (onNavigateSection) {
+      onNavigateSection('packages');
+    } else {
+      const el = document.getElementById('packages-section');
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } else {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
     }
   };
 
-  const handlePackagesClick = () => {
-    if (onSelectShopMode) {
-      onSelectShopMode('packages');
-    }
-    if (onScrollToSection) {
-      onScrollToSection('packages');
+  const handleFeaturedClick = () => {
+    if (onNavigateSection) {
+      onNavigateSection('featured');
+    } else {
+      const el = document.getElementById('featured-section');
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
     }
   };
 
   const handleLogoClick = () => {
-    if (onSelectShopMode) {
-      onSelectShopMode('packages');
-    }
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   return (
-    <div className="w-full">
+    <>
       {/* 1. Gradient Top Header Banner */}
       <header className="w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white py-6 sm:py-8 px-4 text-center shadow-md">
         <div className="max-w-7xl mx-auto flex flex-col items-center justify-center">
@@ -86,117 +90,123 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
       </header>
 
-      {/* 2. Top Quick Actions & Tabs Bar */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-2">
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 max-w-4xl mx-auto">
-          {/* WhatsApp Contact & Cart Buttons */}
-          <div className="w-full sm:w-auto flex items-center gap-2.5">
-            <a
-              href={whatsappUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex-1 sm:flex-initial px-5 py-2.5 sm:py-3 rounded-full bg-[#22c55e] hover:bg-[#16a34a] text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-xs transition-all active:scale-[0.99] cursor-pointer"
-            >
-              <span>واتساب</span>
-              <MessageCircle className="w-4 h-4 fill-current" />
-            </a>
+      {/* 2. Sticky Quick Actions & Tabs Bar (Always visible during scrolling) */}
+      <nav
+        id="storefront-sticky-nav"
+        className="sticky top-0 z-40 w-full bg-white/95 backdrop-blur-md border-b border-gray-200/90 shadow-sm py-2.5 sm:py-3 transition-all duration-200"
+      >
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between gap-2 sm:gap-4 max-w-4xl mx-auto">
+            
+            {/* Quick Actions (WhatsApp & Cart) */}
+            <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+              <a
+                href={whatsappUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                title="تواصل عبر واتساب"
+                className="p-2 sm:px-3.5 sm:py-2 rounded-2xl bg-[#22c55e] hover:bg-[#16a34a] text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 shadow-xs transition-all active:scale-[0.99] cursor-pointer"
+              >
+                <MessageCircle className="w-4 h-4 fill-current" />
+                <span className="hidden md:inline">واتساب</span>
+              </a>
 
-            {/* Global Shopping Cart Button */}
-            <button
-              type="button"
-              id="header-cart-btn"
-              onClick={openCart}
-              className={`px-4 sm:px-5 py-2.5 sm:py-3 rounded-full font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-sm transition-all duration-200 cursor-pointer relative ${
-                totalItemsCount > 0
-                  ? 'bg-zinc-900 text-white hover:bg-zinc-800 ring-2 ring-indigo-400/40 shadow-indigo-500/20 active:scale-98'
-                  : 'bg-white border border-gray-200 text-gray-700 hover:border-gray-300 hover:bg-gray-50'
-              }`}
-            >
-              <ShoppingCart className="w-4 h-4" />
-              <span>السلة</span>
-              <span className={`px-2 py-0.5 rounded-full text-xs font-black transition-transform ${
-                totalItemsCount > 0
-                  ? 'bg-gradient-to-r from-amber-400 to-amber-500 text-zinc-950 scale-110 shadow-xs'
-                  : 'bg-gray-100 text-gray-600'
-              }`}>
-                {totalItemsCount}
-              </span>
-            </button>
-          </div>
-
-          {/* Categories / Counters Tabs */}
-          <div className="w-full sm:w-auto flex items-center justify-center gap-3">
-            {/* Packages / الباكات */}
-            <button
-              type="button"
-              id="shopmode-tab-packages"
-              onClick={handlePackagesClick}
-              className={`flex-1 sm:flex-initial py-2.5 px-5 rounded-2xl font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-xs transition-all duration-200 cursor-pointer ${
-                isPackagesActive
-                  ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white shadow-indigo-500/25 ring-2 ring-indigo-400/40 scale-[1.02]'
-                  : 'bg-white border border-gray-200/90 hover:border-indigo-400 hover:text-indigo-700 text-gray-700'
-              }`}
-            >
-              <span>🎁</span>
-              <span>الباكات</span>
-              {packagesCount > 0 && (
-                <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
-                  isPackagesActive ? 'bg-white/20 text-white' : 'bg-indigo-50 text-indigo-700'
+              {/* Global Shopping Cart Button */}
+              <button
+                type="button"
+                id="header-cart-btn"
+                onClick={openCart}
+                className={`p-2 sm:px-4 sm:py-2 rounded-2xl font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 shadow-xs transition-all duration-200 cursor-pointer relative ${
+                  totalItemsCount > 0
+                    ? 'bg-zinc-900 text-white hover:bg-zinc-800 ring-2 ring-indigo-400/40 shadow-indigo-500/20 active:scale-98'
+                    : 'bg-white border border-gray-200 text-gray-700 hover:border-gray-300 hover:bg-gray-50'
+                }`}
+              >
+                <ShoppingCart className="w-4 h-4" />
+                <span className="hidden sm:inline">السلة</span>
+                <span className={`px-1.5 py-0.5 rounded-full text-xs font-black transition-transform ${
+                  totalItemsCount > 0
+                    ? 'bg-gradient-to-r from-amber-400 to-amber-500 text-zinc-950 scale-110 shadow-xs'
+                    : 'bg-gray-100 text-gray-600'
                 }`}>
-                  {packagesCount}
+                  {totalItemsCount}
                 </span>
-              )}
-            </button>
-
-            {/* Featured / العطور المميزة */}
-            <button
-              type="button"
-              id="shopmode-tab-featured"
-              onClick={handleFeaturedClick}
-              className={`flex-1 sm:flex-initial py-2.5 px-5 rounded-2xl font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-xs transition-all duration-200 cursor-pointer ${
-                isFeaturedActive
-                  ? 'bg-gradient-to-r from-amber-500 via-amber-600 to-orange-600 text-white shadow-amber-500/25 ring-2 ring-amber-400/40 scale-[1.02]'
-                  : 'bg-white border border-gray-200/90 hover:border-amber-400 hover:text-amber-700 text-gray-700'
-              }`}
-            >
-              <span>🌸</span>
-              <span>العطور المميزة</span>
-              <span className={`text-[10px] px-1.5 py-0.5 rounded-md font-bold ${
-                isFeaturedActive ? 'bg-white/25 text-white' : 'bg-amber-100 text-amber-800'
-              }`}>
-                👑 حصري
-              </span>
-            </button>
-          </div>
-        </div>
-
-        {/* Selected Package Banner indicator if active */}
-        {selectedPackage && (
-          <div className="mt-3 max-w-4xl mx-auto p-3.5 bg-indigo-50/90 border border-indigo-100 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-2.5 text-xs sm:text-sm shadow-xs">
-            <div className="flex items-center gap-2 text-indigo-900 font-bold">
-              <span>🎁</span>
-              <span>الباقة المختارة: {selectedPackage.name}</span>
-              <span className="text-indigo-600 font-black">({selectedPerfumes.length} / {perfumesNeeded} عطور)</span>
+              </button>
             </div>
-            {isComplete ? (
-              <div className="w-full sm:w-auto flex items-center justify-end">
+
+            {/* Categories / Counters Tabs */}
+            <div className="flex-1 flex items-center justify-end gap-2 sm:gap-3 max-w-sm sm:max-w-none">
+              {/* Packages / الباكات */}
+              <button
+                type="button"
+                id="shopmode-tab-packages"
+                onClick={handlePackagesClick}
+                className={`flex-1 sm:flex-initial py-2 sm:py-2.5 px-3 sm:px-5 rounded-2xl font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 sm:gap-2 shadow-xs transition-all duration-200 cursor-pointer ${
+                  isPackagesActive
+                    ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white shadow-indigo-500/25 ring-2 ring-indigo-400/40 scale-[1.02]'
+                    : 'bg-white border border-gray-200/90 hover:border-indigo-400 hover:text-indigo-700 text-gray-700'
+                }`}
+              >
+                <span>🎁</span>
+                <span>الباكات</span>
+                {packagesCount > 0 && (
+                  <span className={`text-[10px] px-1.5 sm:px-2 py-0.5 rounded-full font-bold ${
+                    isPackagesActive ? 'bg-white/20 text-white' : 'bg-indigo-50 text-indigo-700'
+                  }`}>
+                    {packagesCount}
+                  </span>
+                )}
+              </button>
+
+              {/* Featured / العطور المميزة */}
+              <button
+                type="button"
+                id="shopmode-tab-featured"
+                onClick={handleFeaturedClick}
+                className={`flex-1 sm:flex-initial py-2 sm:py-2.5 px-3 sm:px-5 rounded-2xl font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 sm:gap-2 shadow-xs transition-all duration-200 cursor-pointer ${
+                  isFeaturedActive
+                    ? 'bg-gradient-to-r from-amber-500 via-amber-600 to-orange-600 text-white shadow-amber-500/25 ring-2 ring-amber-400/40 scale-[1.02]'
+                    : 'bg-white border border-gray-200/90 hover:border-amber-400 hover:text-amber-700 text-gray-700'
+                }`}
+              >
+                <span>👑</span>
+                <span>العطور المميزة</span>
+                <span className={`hidden sm:inline-block text-[10px] px-1.5 py-0.5 rounded-md font-bold ${
+                  isFeaturedActive ? 'bg-white/25 text-white' : 'bg-amber-100 text-amber-800'
+                }`}>
+                  حصري
+                </span>
+              </button>
+            </div>
+
+          </div>
+
+          {/* Selected Package Banner indicator if active */}
+          {selectedPackage && (
+            <div className="mt-2 max-w-4xl mx-auto p-2.5 sm:p-3 bg-indigo-50/95 border border-indigo-100/90 rounded-xl sm:rounded-2xl flex items-center justify-between gap-2 text-xs shadow-xs">
+              <div className="flex items-center gap-1.5 text-indigo-900 font-bold truncate">
+                <span>🎁</span>
+                <span className="truncate">الباك: {selectedPackage.name}</span>
+                <span className="text-indigo-600 font-black shrink-0">({selectedPerfumes.length} / {perfumesNeeded})</span>
+              </div>
+              {isComplete ? (
                 <button
                   type="button"
                   onClick={onOpenCheckout}
-                  className="w-full sm:w-auto px-6 py-2 rounded-xl bg-gradient-to-r from-emerald-600 via-green-600 to-teal-600 text-white font-bold text-xs shadow-xs hover:opacity-95 cursor-pointer flex items-center justify-center gap-1.5"
+                  className="px-3.5 py-1.5 rounded-lg sm:rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold text-xs shadow-xs hover:opacity-95 cursor-pointer shrink-0 flex items-center gap-1"
                 >
                   <span>✓ تأكيد الطلب</span>
                 </button>
-              </div>
-            ) : (
-              <span className="text-amber-800 bg-amber-100/80 px-3 py-1 rounded-lg text-xs font-semibold">
-                حدد {perfumesNeeded - selectedPerfumes.length} عطور متبقية لإكمال الباقة
-              </span>
-            )}
-          </div>
-        )}
-      </div>
-    </div>
+              ) : (
+                <span className="text-amber-800 bg-amber-100/80 px-2 py-0.5 rounded text-[11px] font-semibold shrink-0">
+                  حدد {perfumesNeeded - selectedPerfumes.length} متبقية
+                </span>
+              )}
+            </div>
+          )}
+        </div>
+      </nav>
+    </>
   );
 };
 

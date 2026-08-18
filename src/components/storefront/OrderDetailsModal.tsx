@@ -107,7 +107,7 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
               <span>محتويات طلبك</span>
             </h3>
             <span className="text-[11px] px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 font-bold">
-              {directOrderPerfume ? 'طلب مباشر (عطر مميز)' : (hasCartItems ? `${totalItemsCount} عناصر` : (selectedPackage ? 'باقة واحدة' : 'عطر واحد'))}
+              {directOrderPerfume ? 'طلب مباشر (عطر مميز)' : (hasCartItems ? `${totalItemsCount} عناصر` : (selectedPackage ? 'باك واحد' : 'عطر واحد'))}
             </span>
           </div>
 

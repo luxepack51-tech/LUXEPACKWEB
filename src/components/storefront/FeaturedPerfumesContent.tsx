@@ -55,7 +55,7 @@ export const FeaturedPerfumesContent: React.FC<FeaturedPerfumesContentProps> = (
   const menCount = featuredPerfumes.filter(p => p.gender === 'men').length;
 
   return (
-    <section className="py-6 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-6 animate-fade-in">
+    <section id="featured-perfumes" className="py-6 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-6 animate-fade-in scroll-mt-24 sm:scroll-mt-28">
       {/* 1. Header & Category Switcher */}
       <div className="max-w-3xl mx-auto text-center space-y-4">
         {/* Subtle Crown Badge */}

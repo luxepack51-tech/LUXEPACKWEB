@@ -19,7 +19,7 @@ export const Hero: React.FC<HeroProps> = ({ settings, onChoosePackage }) => {
 
         {/* Hero Main Headline */}
         <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black tracking-tight text-gray-900 leading-tight mb-4">
-          اختر باقتك المفضلة <br />
+          اختر باكك المفضل <br />
           <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
             من أرقى العطور العالمية الفاخرة
           </span>
@@ -27,7 +27,7 @@ export const Hero: React.FC<HeroProps> = ({ settings, onChoosePackage }) => {
 
         {/* Subtitle */}
         <p className="text-gray-600 text-sm sm:text-lg max-w-2xl mx-auto mb-6 leading-relaxed">
-          {settings.hero_subtitle || "عطور أصلية فاخرة بثبات يدوم طويلاً. اختر باقتك المفضلة واستفد من التخفيضات الحصرية."}
+          {settings.hero_subtitle || "عطور أصلية فاخرة بثبات يدوم طويلاً. اختر باكك المفضل واستفد من التخفيضات الحصرية."}
         </p>
 
         {/* Primary CTA Button */}
@@ -37,7 +37,7 @@ export const Hero: React.FC<HeroProps> = ({ settings, onChoosePackage }) => {
             onClick={onChoosePackage}
             className="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold text-base shadow-lg shadow-indigo-500/25 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98"
           >
-            <span>ابدأ باختيار الباقة</span>
+            <span>ابدأ باختيار الباك</span>
             <ArrowDown className="w-4 h-4 animate-bounce" />
           </button>
         </div>

@@ -18,9 +18,9 @@ export const HowItWorks: React.FC = () => {
           <div className="w-10 h-10 rounded-2xl bg-blue-50 text-blue-600 font-black text-lg flex items-center justify-center mx-auto mb-3">
             1
           </div>
-          <h3 className="text-sm sm:text-base font-bold text-gray-900 mb-1">اختر الباقة المناسبة</h3>
+          <h3 className="text-sm sm:text-base font-bold text-gray-900 mb-1">اختر الباك المناسب</h3>
           <p className="text-gray-500 text-xs leading-relaxed">
-            حدد باقة 2، 3 أو 4 عطور حسب احتياجك للاستفادة من أفضل سعر.
+            حدد باك 2، 3 أو 4 عطور حسب احتياجك للاستفادة من أفضل سعر.
           </p>
         </div>
 

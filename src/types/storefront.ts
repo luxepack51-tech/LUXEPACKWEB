@@ -67,6 +67,7 @@ export interface Category {
   name: string;
   slug?: string;
   is_active?: boolean;
+  sort_order?: number;
 }
 
 export interface Wilaya {

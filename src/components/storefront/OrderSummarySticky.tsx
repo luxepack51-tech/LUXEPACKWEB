@@ -131,7 +131,7 @@ export const OrderSummarySticky: React.FC<OrderSummaryStickyProps> = ({
         {selectedPackage && (
           <div className="space-y-2 pb-2 border-b border-gray-100">
             <div className="flex items-center justify-between py-1">
-              <span className="text-gray-600 font-medium">الباقة المختارة:</span>
+              <span className="text-gray-600 font-medium">الباك المختار:</span>
               <span className="font-bold text-gray-900 text-right">
                 {selectedPackage.name}
               </span>
@@ -171,7 +171,7 @@ export const OrderSummarySticky: React.FC<OrderSummaryStickyProps> = ({
         <div className="space-y-1.5 pt-2">
           {totalPackagesPrice > 0 && (
             <div className="flex items-center justify-between text-gray-600">
-              <span>مجموع الباقات:</span>
+              <span>مجموع الباكات:</span>
               <span className="font-bold text-gray-900">{totalPackagesPrice.toLocaleString()} {currency}</span>
             </div>
           )}

@@ -69,13 +69,13 @@ export const PerfumeSection: React.FC<PerfumeSectionProps> = ({
 
   const handleSelectClick = (perfume: Perfume, isAlreadySelected: boolean) => {
     if (!selectedPackage) {
-      setLimitWarning('يرجى اختيار الباقة أولاً من الأعلى للتمكن من تحديد العطور');
+      setLimitWarning('يرجى اختيار الباك أولاً من الأعلى للتمكن من تحديد العطور');
       setTimeout(() => setLimitWarning(null), 3500);
       return;
     }
 
     if (!isAlreadySelected && currentCount >= requiredCount) {
-      setLimitWarning(`لقد وصلت للحد الأقصى (${requiredCount} عطور) لباقة ${selectedPackage.name}. لإضافة عطر آخر، ألغِ عطر سابق أو اختر باقة أكبر.`);
+      setLimitWarning(`لقد وصلت للحد الأقصى (${requiredCount} عطور) لباك ${selectedPackage.name}. لإضافة عطر آخر، ألغِ عطر سابق أو اختر باك أكبر.`);
       setTimeout(() => setLimitWarning(null), 4000);
       return;
     }
@@ -85,7 +85,7 @@ export const PerfumeSection: React.FC<PerfumeSectionProps> = ({
   };
 
   return (
-    <section id="perfumes" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 scroll-mt-20">
+    <section id="perfumes" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 scroll-mt-24 sm:scroll-mt-28">
       
       {/* Category Tabs: Dynamic from Supabase */}
       <div className="flex items-center justify-center mb-6">
@@ -130,7 +130,7 @@ export const PerfumeSection: React.FC<PerfumeSectionProps> = ({
         }`}>
           <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 text-xs sm:text-sm">
             <span className="font-bold text-indigo-950">
-              الباقة: <span className="text-indigo-600">{selectedPackage.name}</span>
+              الباك: <span className="text-indigo-600">{selectedPackage.name}</span>
             </span>
             <span className="text-gray-400">|</span>
             <span className="text-gray-600">
@@ -262,7 +262,7 @@ export const PerfumeSection: React.FC<PerfumeSectionProps> = ({
           <div className="text-right">
             <h4 className="text-sm sm:text-base font-bold text-emerald-900 flex items-center gap-2">
               <span className="w-6 h-6 rounded-full bg-emerald-600 text-white text-xs flex items-center justify-center font-bold">✓</span>
-              <span>أحسنت! اكتمل تحديد {requiredCount} عطور لباقة ({selectedPackage.name})</span>
+              <span>أحسنت! اكتمل تحديد {requiredCount} عطور لباك ({selectedPackage.name})</span>
             </h4>
             <p className="text-emerald-700 text-xs sm:text-sm mt-1">
               يمكنك الآن إكمال تفاصيل التوصيل وتأكيد الطلب

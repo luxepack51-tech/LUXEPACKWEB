@@ -119,7 +119,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                 </div>
                 <h3 className="text-base font-black text-gray-800 mb-1">سلتك فارغة حالياً</h3>
                 <p className="text-xs text-gray-500 max-w-xs mb-6">
-                  استكشف باقاتنا الحصرية أو تشكيلة العطور المميزة وأضف ما يناسب ذوقك!
+                  استكشف باكاتنا الحصرية أو تشكيلة العطور المميزة وأضف ما يناسب ذوقك!
                 </p>
                 <button
                   type="button"
@@ -151,7 +151,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                           </div>
                         )}
                         <span className="absolute top-1 right-1 text-[9px] px-1 py-0.2 rounded font-bold bg-black/60 text-white backdrop-blur-2xs">
-                          {isFeatured ? 'عطر مميز' : 'باقة'}
+                          {isFeatured ? 'عطر مميز' : 'باك'}
                         </span>
                       </div>
 

@@ -29,8 +29,8 @@ interface StorefrontPageProps {
 }
 
 const StorefrontInner: React.FC<StorefrontPageProps> = ({ onNavigate }) => {
-  // Top-Level UI State Switch: 'packages' (default) vs 'featured'
-  const [shopMode, setShopMode] = useState<'packages' | 'featured'>('packages');
+  // Navigation active section: 'packages' (default) vs 'featured'
+  const [activeSection, setActiveSection] = useState<'packages' | 'featured'>('packages');
 
   // Unified Cart Context
   const { 
@@ -187,6 +187,12 @@ const StorefrontInner: React.FC<StorefrontPageProps> = ({ onNavigate }) => {
     }
   };
 
+  // Navigate section / switch shopMode tab
+  const handleNavigateSection = (section: 'packages' | 'featured') => {
+    setActiveSection(section);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   // Track if delivery/checkout section is in view
   const [isDeliveryInView, setIsDeliveryInView] = useState(false);
 
@@ -265,16 +271,12 @@ const StorefrontInner: React.FC<StorefrontPageProps> = ({ onNavigate }) => {
       setSelectedPerfumes([]);
     }
 
-    if (shopMode === 'packages') {
-      const orderSection = document.getElementById('delivery') || document.getElementById('order-form');
-      if (orderSection) {
-        orderSection.scrollIntoView({
-          behavior: 'smooth',
-          block: 'start'
-        });
-      } else {
-        setIsOrderModalOpen(true);
-      }
+    const orderSection = document.getElementById('delivery') || document.getElementById('order-form');
+    if (orderSection) {
+      orderSection.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start'
+      });
     } else {
       setIsOrderModalOpen(true);
     }
@@ -537,7 +539,7 @@ const StorefrontInner: React.FC<StorefrontPageProps> = ({ onNavigate }) => {
   };
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] text-gray-900 font-sans dir-rtl overflow-x-hidden pb-24 sm:pb-12">
+    <div className="min-h-screen bg-[#f8fafc] text-gray-900 font-sans dir-rtl pb-24 sm:pb-12">
       {/* Global Shopping Cart Drawer */}
       <CartDrawer 
         currency={settings.currency}
@@ -545,31 +547,30 @@ const StorefrontInner: React.FC<StorefrontPageProps> = ({ onNavigate }) => {
         onCheckout={handleProceedToCheckout}
       />
 
-      {/* Navbar Header with Shop Mode Switcher Tabs and Cart Button */}
+      {/* Navbar Header with Sticky Navigation and Cart Button */}
       <Header
         settings={settings}
         selectedPackage={selectedPackage}
         selectedPerfumes={selectedPerfumes}
         packagesCount={packages.length}
-        shopMode={shopMode}
-        onSelectShopMode={setShopMode}
-        onScrollToSection={scrollToSection}
+        activeSection={activeSection}
+        onNavigateSection={handleNavigateSection}
         onOpenCheckout={handleConfirmPerfumeSelection}
       />
 
-      <main className="space-y-4">
-        {/* ============================================================ */}
-        {/* SHOP MODE 1: PACKAGES + NORMAL PERFUME SELECTION (DEFAULT) */}
-        {/* ============================================================ */}
-        {shopMode === 'packages' ? (
-          <>
+      <main className="space-y-6">
+        {activeSection === 'packages' ? (
+          /* ============================================================ */
+          /* 1. PACKAGES VIEW (HERO + PACKAGES + PERFUMES + DELIVERY) */
+          /* ============================================================ */
+          <div id="packages-section" className="space-y-6">
             {/* Hero Section */}
             <Hero
               settings={settings}
               onChoosePackage={() => scrollToSection('packages')}
             />
 
-            {/* 1. Package Selection Section */}
+            {/* Package Selection Section */}
             <PackageSection
               packages={packages}
               selectedPackage={selectedPackage}
@@ -578,7 +579,7 @@ const StorefrontInner: React.FC<StorefrontPageProps> = ({ onNavigate }) => {
               currency={settings.currency}
             />
 
-            {/* 2. Perfume Selection Section */}
+            {/* Perfume Selection Section */}
             <PerfumeSection
               perfumes={perfumes}
               categories={categories}
@@ -593,8 +594,8 @@ const StorefrontInner: React.FC<StorefrontPageProps> = ({ onNavigate }) => {
             {/* How It Works Guide */}
             <HowItWorks />
 
-            {/* 3 & 4. Delivery & Order Form & Summary Container */}
-            <section id="delivery" className="py-8 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto scroll-mt-20">
+            {/* Delivery & Order Form & Summary Container */}
+            <section id="delivery" className="py-8 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto scroll-mt-20 sm:scroll-mt-24">
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
                 
                 {/* Left 7 Columns: Delivery & Customer Info */}
@@ -667,19 +668,21 @@ const StorefrontInner: React.FC<StorefrontPageProps> = ({ onNavigate }) => {
 
               </div>
             </section>
-          </>
+          </div>
         ) : (
           /* ============================================================ */
-          /* SHOP MODE 2: FEATURED PERFUMES CONTENT AREA (SAME PAGE) */
+          /* 2. FEATURED PERFUMES VIEW (STANDALONE SEPARATE PAGE) */
           /* ============================================================ */
-          <FeaturedPerfumesContent
-            featuredPerfumes={featuredPerfumes}
-            isLoading={isLoadingFeatured}
-            error={featuredError}
-            currency={settings.currency}
-            onOrderPerfume={handleOrderFeaturedPerfume}
-            onRetry={loadFeaturedData}
-          />
+          <div id="featured-section">
+            <FeaturedPerfumesContent
+              featuredPerfumes={featuredPerfumes}
+              isLoading={isLoadingFeatured}
+              error={featuredError}
+              currency={settings.currency}
+              onOrderPerfume={handleOrderFeaturedPerfume}
+              onRetry={loadFeaturedData}
+            />
+          </div>
         )}
       </main>
 
@@ -697,14 +700,14 @@ const StorefrontInner: React.FC<StorefrontPageProps> = ({ onNavigate }) => {
       )}
 
       {/* Floating Bottom Bar on Mobile when required perfume limit is reached in Packages mode and no cart items */}
-      {totalItemsCount === 0 && shopMode === 'packages' && selectedPackage && selectedPerfumes.length === selectedPackage.perfumes_count && !isDeliveryInView && (
+      {totalItemsCount === 0 && selectedPackage && selectedPerfumes.length === selectedPackage.perfumes_count && !isDeliveryInView && (
         <div className="fixed bottom-0 left-0 right-0 p-3 bg-white/95 backdrop-blur-md border-t border-emerald-200 z-40 sm:hidden flex items-center justify-between gap-3 shadow-lg animate-fade-in">
           <div className="text-right">
             <span className="text-[11px] text-emerald-700 font-bold block">
               ✓ تم تحديد {selectedPerfumes.length} عطور
             </span>
             <span className="font-black text-emerald-800 text-sm">
-              باقة {selectedPackage.name}
+              باك {selectedPackage.name}
             </span>
           </div>
 
