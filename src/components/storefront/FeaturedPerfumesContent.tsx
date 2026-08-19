@@ -5,6 +5,7 @@ import {
   ShoppingBag, ShoppingCart, AlertCircle, RefreshCw, Crown, 
   Sparkles, Plus, Check, Tag, CheckCircle2 
 } from 'lucide-react';
+import { trackTikTokViewContent } from '../../services/tiktok';
 
 interface FeaturedPerfumesContentProps {
   featuredPerfumes: FeaturedPerfume[];
@@ -315,7 +316,16 @@ export const FeaturedPerfumesContent: React.FC<FeaturedPerfumesContentProps> = (
                           {/* 2. Order Now Button (Direct checkout) */}
                           <button
                             type="button"
-                            onClick={() => onOrderPerfume(perfume)}
+                            onClick={() => {
+                              trackTikTokViewContent({
+                                id: perfume.id,
+                                name: perfume.name,
+                                price: Number(perfume.price) || 0,
+                                type: 'featured',
+                                category: 'عطور مميزة'
+                              });
+                              onOrderPerfume(perfume);
+                            }}
                             className="py-2 px-2 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold text-xs shadow-md shadow-indigo-500/20 active:scale-95 transition-all flex items-center justify-center gap-1 cursor-pointer"
                           >
                             <ShoppingBag className="w-3.5 h-3.5" />

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Package } from '../../types/storefront';
 import { Sparkles, Check, Gift } from 'lucide-react';
+import { trackTikTokViewContent } from '../../services/tiktok';
 
 interface PackageSectionProps {
   packages: Package[];
@@ -61,7 +62,16 @@ export const PackageSection: React.FC<PackageSectionProps> = ({
                 <button
                   type="button"
                   key={`${pkg.id}-${idx}`}
-                  onClick={() => onSelectPackage(pkg)}
+                  onClick={() => {
+                    trackTikTokViewContent({
+                      id: pkg.id,
+                      name: pkg.name,
+                      price: Number(pkg.price) || 0,
+                      type: 'package',
+                      category: 'باقات عطور'
+                    });
+                    onSelectPackage(pkg);
+                  }}
                   className={`group relative rounded-2xl p-3.5 sm:p-5 text-center transition-all duration-200 cursor-pointer flex flex-col items-center justify-between gap-2.5 ${
                     isSelected
                       ? 'border-2 border-indigo-600 bg-gradient-to-b from-indigo-50/70 to-white shadow-md shadow-indigo-500/10 ring-2 ring-indigo-500/20 scale-[1.02]'

@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, ReactNode } from 'react';
 import { CartItem, Package, Perfume, FeaturedPerfume, CartCalculation } from '../types/storefront';
+import { trackTikTokAddToCart } from '../services/tiktok';
 
 const CART_STORAGE_KEY = 'store_cart';
 export const FEATURED_DISCOUNT_THRESHOLD = 2;
@@ -105,6 +106,16 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     });
 
     triggerAddedFeedback(pkg.name);
+
+    // Track TikTok AddToCart event
+    trackTikTokAddToCart({
+      id: pkg.id,
+      name: pkg.name,
+      price: Number(pkg.price) || 0,
+      quantity,
+      type: 'package',
+      category: 'باقات عطور'
+    });
   };
 
   /**
@@ -141,6 +152,16 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     });
 
     triggerAddedFeedback(featuredPerfume.name);
+
+    // Track TikTok AddToCart event
+    trackTikTokAddToCart({
+      id: featuredPerfume.id,
+      name: featuredPerfume.name,
+      price: Number(featuredPerfume.price) || 0,
+      quantity,
+      type: 'featured',
+      category: 'عطور مميزة'
+    });
   };
 
   /**

@@ -7,6 +7,7 @@ import { fetchWilayas, fetchCommunesByWilaya, fetchCommuneById } from '../servic
 import { fetchActiveFeaturedPerfumes } from '../services/featuredPerfumes';
 import { createOrder } from '../services/orders';
 import { initMetaPixel, trackPixelEvent } from '../services/pixel';
+import { trackTikTokInitiateCheckout, trackTikTokPlaceAnOrder } from '../services/tiktok';
 
 import { CartProvider, useCart } from '../context/CartContext';
 import { CartDrawer } from '../components/storefront/CartDrawer';
@@ -336,6 +337,17 @@ const StorefrontInner: React.FC<StorefrontPageProps> = ({ onNavigate }) => {
   const handleOrderFeaturedPerfume = (perfume: FeaturedPerfume) => {
     setDirectOrderPerfume(perfume);
     setIsOrderModalOpen(true);
+    trackTikTokInitiateCheckout({
+      contents: [{
+        content_id: perfume.id,
+        content_name: perfume.name,
+        content_type: 'featured',
+        quantity: 1,
+        price: Number(perfume.price) || 0
+      }],
+      value: Number(perfume.price) || 0,
+      currency: 'DZD'
+    });
   };
 
   const handleCloseOrderModal = () => {
@@ -395,6 +407,18 @@ const StorefrontInner: React.FC<StorefrontPageProps> = ({ onNavigate }) => {
         currency: 'DZD'
       });
 
+      trackTikTokInitiateCheckout({
+        contents: [{
+          content_id: directOrderPerfume.id,
+          content_name: directOrderPerfume.name,
+          content_type: 'featured',
+          quantity: 1,
+          price: Number(directOrderPerfume.price) || 0
+        }],
+        value: directTotalPrice,
+        currency: 'DZD'
+      });
+
       const result = await createOrder(payload);
       setIsSubmittingOrder(false);
 
@@ -406,6 +430,8 @@ const StorefrontInner: React.FC<StorefrontPageProps> = ({ onNavigate }) => {
           currency: 'DZD',
           order_id: result.order.id
         });
+        // TikTok COD PlaceAnOrder tracking (deduplicated by order.id)
+        trackTikTokPlaceAnOrder(result.order);
         setCreatedOrder(result.order);
       } else {
         console.error('[ORDER TRACE SUPABASE ERROR]', result.error);
@@ -499,6 +525,18 @@ const StorefrontInner: React.FC<StorefrontPageProps> = ({ onNavigate }) => {
       currency: 'DZD'
     });
 
+    trackTikTokInitiateCheckout({
+      contents: finalCartItems.map(item => ({
+        content_id: item.package_id || item.featured_perfume_id || item.id,
+        content_name: item.name,
+        content_type: item.type === 'package' ? 'package' : 'featured',
+        quantity: item.quantity || 1,
+        price: Number(item.unit_price) || 0
+      })),
+      value: totalPrice,
+      currency: 'DZD'
+    });
+
     const result = await createOrder(payload);
 
     setIsSubmittingOrder(false);
@@ -513,6 +551,8 @@ const StorefrontInner: React.FC<StorefrontPageProps> = ({ onNavigate }) => {
         currency: 'DZD',
         order_id: result.order.id
       });
+      // TikTok COD PlaceAnOrder tracking (deduplicated by order.id)
+      trackTikTokPlaceAnOrder(result.order);
       setCreatedOrder(result.order);
     } else {
       console.error('[ORDER TRACE SUPABASE ERROR]', result.error);
