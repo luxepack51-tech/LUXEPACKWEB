@@ -15,6 +15,19 @@ declare global {
 const DEFAULT_CURRENCY = 'DZD';
 
 /**
+ * TikTok strictly allows ONLY 'product' or 'product_group' as content_type.
+ * Any other value ('perfume', 'package', 'featured', etc.) is invalid in TikTok Events Manager.
+ */
+export function normalizeContentType(type?: string): 'product' | 'product_group' {
+  if (!type) return 'product';
+  const lower = type.toLowerCase();
+  if (lower === 'product_group' || lower === 'package' || lower === 'bundle' || lower === 'collection') {
+    return 'product_group';
+  }
+  return 'product';
+}
+
+/**
  * Generate a unique event ID for deduplication between Browser Pixel & Server Events API
  */
 export function generateEventId(prefix: string = 'evt'): string {
@@ -23,7 +36,7 @@ export function generateEventId(prefix: string = 'evt'): string {
 
 /**
  * Sends event to Server-side TikTok Events API endpoint (/api/tiktok-events)
- * Safe and non-blocking (swallows errors to never interrupt user flows or order submission)
+ * Safe and non-blocking (swallows errors so it never interrupts checkout or UI flows)
  */
 async function sendServerEvent(
   eventName: string,
@@ -45,7 +58,6 @@ async function sendServerEvent(
       }
     };
 
-    // Send in background without blocking
     fetch('/api/tiktok-events', {
       method: 'POST',
       headers: {
@@ -53,7 +65,6 @@ async function sendServerEvent(
       },
       body: JSON.stringify(payload)
     }).catch(err => {
-      // Server API error should never break user journey
       console.warn('[TIKTOK] Background Server API request failed:', err?.message || err);
     });
   } catch (e) {
@@ -114,67 +125,99 @@ export function trackTikTokViewContent(item: {
   name: string;
   price?: number;
   quantity?: number;
-  type?: 'perfume' | 'package' | 'featured' | string;
+  type?: 'product' | 'product_group' | 'perfume' | 'package' | 'featured' | string;
   category?: string;
 }) {
-  const eventId = generateEventId('view');
   const price = Number(item.price) || 0;
-  const quantity = Number(item.quantity) || 1;
+  const quantity = Math.max(1, Number(item.quantity) || 1);
+  const totalValue = price * quantity;
+  const contentType = normalizeContentType(item.type);
+
+  const eventId = generateEventId('view');
+
+  const payload: Record<string, any> = {
+    contents: [
+      {
+        content_id: String(item.id),
+        content_type: contentType,
+        content_name: item.name,
+        content_category: item.category || 'العطور',
+        quantity,
+        price
+      }
+    ],
+    content_id: String(item.id),
+    content_type: contentType,
+    content_name: item.name,
+    content_category: item.category || 'العطور',
+    quantity,
+    currency: DEFAULT_CURRENCY
+  };
+
+  if (totalValue > 0) {
+    payload.value = totalValue;
+  }
 
   console.log('[TIKTOK] ViewContent', {
     content_id: item.id,
     content_name: item.name,
-    content_type: item.type || 'product',
-    value: price,
+    content_type: contentType,
+    value: payload.value,
     currency: DEFAULT_CURRENCY
   });
 
-  trackTikTokEvent(
-    'ViewContent',
-    {
-      contents: [
-        {
-          content_id: item.id,
-          content_type: item.type === 'package' ? 'package' : 'product',
-          content_name: item.name,
-          content_category: item.category || 'العطور',
-          quantity,
-          price
-        }
-      ],
-      content_id: item.id,
-      content_type: item.type === 'package' ? 'package' : 'product',
-      content_name: item.name,
-      content_category: item.category || 'العطور',
-      quantity,
-      value: price,
-      currency: DEFAULT_CURRENCY
-    },
-    eventId
-  );
+  trackTikTokEvent('ViewContent', payload, eventId);
 }
 
 /**
+ * Deduplication state for AddToCart (prevent rapid repeated duplicate triggers)
+ */
+let lastAddToCartSignature = '';
+let lastAddToCartTime = 0;
+
+/**
  * 3. AddToCart Event
- * Triggered when adding a regular perfume to package, package to cart, or featured perfume to cart
+ * Triggered ONLY when a user explicitly adds a package or featured perfume to the cart.
+ * Strict rules:
+ * - content_type MUST be 'product' or 'product_group'
+ * - value MUST be a positive number (> 0)
+ * - prevents duplicate calls within short intervals
  */
 export function trackTikTokAddToCart(item: {
   id: string;
   name: string;
-  price?: number;
+  price: number;
   quantity?: number;
-  type?: 'perfume' | 'package' | 'featured' | string;
+  type?: 'product' | 'product_group' | 'package' | 'featured' | string;
   category?: string;
 }) {
-  const eventId = generateEventId('cart');
   const price = Number(item.price) || 0;
-  const quantity = Number(item.quantity) || 1;
-  const totalValue = price * quantity;
+  const quantity = Math.max(1, Number(item.quantity) || 1);
+  const totalValue = Number((price * quantity).toFixed(2));
+
+  // Validation: value MUST be a valid number > 0
+  if (totalValue <= 0 || isNaN(totalValue)) {
+    console.warn(`[TIKTOK] AddToCart skipped: Invalid price/value (${totalValue}) for item:`, item.name);
+    return;
+  }
+
+  // Deduplication check: ignore identical AddToCart within 750ms
+  const signature = `${item.id}_${quantity}_${totalValue}`;
+  const now = Date.now();
+  if (signature === lastAddToCartSignature && now - lastAddToCartTime < 750) {
+    console.warn('[TIKTOK] AddToCart skipped: Duplicate event detected within 750ms');
+    return;
+  }
+  lastAddToCartSignature = signature;
+  lastAddToCartTime = now;
+
+  const contentType = normalizeContentType(item.type);
+  const eventId = generateEventId('cart');
 
   console.log('[TIKTOK] AddToCart', {
     content_id: item.id,
     content_name: item.name,
-    content_type: item.type || 'product',
+    content_type: contentType,
     quantity,
     value: totalValue,
     currency: DEFAULT_CURRENCY
@@ -185,20 +228,20 @@ export function trackTikTokAddToCart(item: {
     {
       contents: [
         {
-          content_id: item.id,
-          content_type: item.type === 'package' ? 'package' : 'product',
+          content_id: String(item.id),
+          content_type: contentType,
           content_name: item.name,
           content_category: item.category || 'العطور',
           quantity,
           price
         }
       ],
-      content_id: item.id,
-      content_type: item.type === 'package' ? 'package' : 'product',
+      content_id: String(item.id),
+      content_type: contentType,
       content_name: item.name,
       content_category: item.category || 'العطور',
       quantity,
-      value: totalValue > 0 ? totalValue : price,
+      value: totalValue,
       currency: DEFAULT_CURRENCY
     },
     eventId
@@ -220,25 +263,38 @@ export function trackTikTokInitiateCheckout(data: {
   value: number;
   currency?: string;
 }) {
-  const eventId = generateEventId('checkout');
   const totalValue = Number(data.value) || 0;
+  if (totalValue <= 0 || isNaN(totalValue)) {
+    console.warn(`[TIKTOK] InitiateCheckout skipped: Invalid value (${totalValue})`);
+    return;
+  }
+
+  const eventId = generateEventId('checkout');
+  const normalizedContents = (data.contents || []).map(item => ({
+    content_id: String(item.content_id),
+    content_name: item.content_name,
+    content_type: normalizeContentType(item.content_type),
+    quantity: Math.max(1, Number(item.quantity) || 1),
+    price: Number(item.price) || 0
+  }));
+
+  const rootContentType: 'product' | 'product_group' =
+    normalizedContents.length > 1 || normalizedContents.some(c => c.content_type === 'product_group')
+      ? 'product_group'
+      : 'product';
 
   console.log('[TIKTOK] InitiateCheckout', {
+    content_type: rootContentType,
     value: totalValue,
     currency: data.currency || DEFAULT_CURRENCY,
-    items_count: data.contents?.length || 1
+    items_count: normalizedContents.length
   });
 
   trackTikTokEvent(
     'InitiateCheckout',
     {
-      contents: data.contents?.map(item => ({
-        content_id: item.content_id,
-        content_name: item.content_name,
-        content_type: item.content_type || 'product',
-        quantity: item.quantity || 1,
-        price: Number(item.price) || 0
-      })) || [],
+      contents: normalizedContents,
+      content_type: rootContentType,
       value: totalValue,
       currency: data.currency || DEFAULT_CURRENCY
     },
@@ -255,37 +311,44 @@ export function trackTikTokPlaceAnOrder(order: CreatedOrder) {
   if (!order || !order.id) return;
 
   const totalValue = Number(order.total_price) || 0;
-  const eventId = order.id; // Crucial for deduplication: event_id = order.id
+  if (totalValue <= 0 || isNaN(totalValue)) {
+    console.warn(`[TIKTOK] PlaceAnOrder skipped: Invalid order total (${totalValue}) for order:`, order.id);
+    return;
+  }
 
-  // Prepare normalized contents list
+  const eventId = String(order.id); // Crucial for deduplication: event_id = order.id
+
+  // Prepare normalized contents list with strictly valid content_type ('product' or 'product_group')
   const contents = (order.selected_perfumes || []).map((perf, index) => {
-    const isFeatured =
-      perf.type === 'featured' ||
-      perf.type === 'featured_perfume' ||
-      perf.category === 'عطور مميزة' ||
-      (typeof perf.name === 'string' && perf.name.includes('عطر مميز'));
+    const isGroup = perf.type === 'package' || perf.type === 'product_group';
+    const contentType = isGroup ? 'product_group' : 'product';
 
     return {
-      content_id: perf.id || `item_${index}`,
-      content_name: perf.name,
-      content_type: isFeatured ? 'featured' : (order.package_name ? 'package_item' : 'perfume'),
-      content_category: perf.category || (isFeatured ? 'عطور مميزة' : 'باقات عطور'),
-      quantity: Number(perf.quantity) || 1,
-      price: Number(order.package_price) || totalValue
+      content_id: String(perf.id || `item_${index}`),
+      content_name: String(perf.name),
+      content_type: contentType,
+      content_category: perf.category || 'العطور',
+      quantity: Math.max(1, Number(perf.quantity) || 1),
+      price: Number((perf as any).price || order.package_price || totalValue)
     };
   });
 
   // If no perfumes in array, add summary package item
   if (contents.length === 0) {
     contents.push({
-      content_id: order.package_id || 'order_pkg',
-      content_name: order.package_name || 'باقة عطور',
-      content_type: 'package',
-      content_category: 'عطور',
+      content_id: String(order.package_id || 'order_pkg'),
+      content_name: String(order.package_name || 'باقة عطور'),
+      content_type: 'product_group',
+      content_category: 'العطور',
       quantity: 1,
       price: totalValue
     });
   }
+
+  const rootContentType: 'product' | 'product_group' =
+    contents.length > 1 || contents.some(c => c.content_type === 'product_group')
+      ? 'product_group'
+      : 'product';
 
   // Exact required logging format
   console.log('[TIKTOK] PlaceAnOrder');
@@ -298,6 +361,7 @@ export function trackTikTokPlaceAnOrder(order: CreatedOrder) {
     'PlaceAnOrder',
     {
       contents,
+      content_type: rootContentType,
       value: totalValue,
       currency: DEFAULT_CURRENCY,
       order_id: order.id,

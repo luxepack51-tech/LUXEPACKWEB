@@ -77,6 +77,30 @@ export async function handleTikTokEvent(payload: TikTokEventPayload, reqHeaders:
     };
   }
 
+  // Validate and normalize contents
+  const rawContents = Array.isArray(properties.contents) ? properties.contents : [];
+  const normalizedContents = rawContents.map((c: any) => {
+    const rawType = String(c.content_type || '').toLowerCase();
+    const isGroup = rawType === 'product_group' || rawType === 'package' || rawType === 'bundle';
+    return {
+      content_id: String(c.content_id || ''),
+      content_name: String(c.content_name || ''),
+      content_type: isGroup ? 'product_group' : 'product',
+      content_category: c.content_category || 'العطور',
+      quantity: Math.max(1, Number(c.quantity) || 1),
+      price: Number(c.price) || 0
+    };
+  });
+
+  const rootContentType: 'product' | 'product_group' =
+    properties.content_type === 'product_group' ||
+    normalizedContents.length > 1 ||
+    normalizedContents.some((c: any) => c.content_type === 'product_group')
+      ? 'product_group'
+      : 'product';
+
+  const numValue = properties.value !== undefined ? Number(properties.value) : undefined;
+
   // Prepare TikTok Events API v1.3 Payload
   const tiktokPayload = {
     event_source: 'web',
@@ -92,8 +116,9 @@ export async function handleTikTokEvent(payload: TikTokEventPayload, reqHeaders:
           user_agent: userAgent ? String(userAgent) : undefined
         },
         properties: {
-          contents: properties.contents || [],
-          value: properties.value !== undefined ? Number(properties.value) : undefined,
+          contents: normalizedContents,
+          content_type: rootContentType,
+          value: numValue !== undefined && !isNaN(numValue) && numValue > 0 ? numValue : undefined,
           currency: properties.currency || 'DZD'
         }
       }

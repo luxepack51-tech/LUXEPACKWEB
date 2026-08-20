@@ -67,7 +67,7 @@ export const PackageSection: React.FC<PackageSectionProps> = ({
                       id: pkg.id,
                       name: pkg.name,
                       price: Number(pkg.price) || 0,
-                      type: 'package',
+                      type: 'product_group',
                       category: 'باقات عطور'
                     });
                     onSelectPackage(pkg);

@@ -321,7 +321,7 @@ export const FeaturedPerfumesContent: React.FC<FeaturedPerfumesContentProps> = (
                                 id: perfume.id,
                                 name: perfume.name,
                                 price: Number(perfume.price) || 0,
-                                type: 'featured',
+                                type: 'product',
                                 category: 'عطور مميزة'
                               });
                               onOrderPerfume(perfume);

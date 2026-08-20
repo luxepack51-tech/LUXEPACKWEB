@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Perfume, Category, Package } from '../../types/storefront';
 import { Check, AlertCircle, PackageX, Sparkles } from 'lucide-react';
-import { trackTikTokViewContent, trackTikTokAddToCart } from '../../services/tiktok';
+import { trackTikTokViewContent } from '../../services/tiktok';
 
 interface PerfumeSectionProps {
   perfumes: Perfume[];
@@ -69,11 +69,11 @@ export const PerfumeSection: React.FC<PerfumeSectionProps> = ({
   }, [perfumes, selectedCategoryId, categories]);
 
   const handleSelectClick = (perfume: Perfume, isAlreadySelected: boolean) => {
-    // Track ViewContent on click
+    // Track ViewContent on click (strictly as 'product')
     trackTikTokViewContent({
       id: perfume.id,
       name: perfume.name,
-      type: 'perfume',
+      type: 'product',
       category: perfume.category
     });
 
@@ -87,17 +87,6 @@ export const PerfumeSection: React.FC<PerfumeSectionProps> = ({
       setLimitWarning(`لقد وصلت للحد الأقصى (${requiredCount} عطور) لباك ${selectedPackage.name}. لإضافة عطر آخر، ألغِ عطر سابق أو اختر باك أكبر.`);
       setTimeout(() => setLimitWarning(null), 4000);
       return;
-    }
-
-    // Track AddToCart when selecting a perfume into the package
-    if (!isAlreadySelected) {
-      trackTikTokAddToCart({
-        id: perfume.id,
-        name: perfume.name,
-        type: 'perfume',
-        category: perfume.category,
-        quantity: 1
-      });
     }
 
     setLimitWarning(null);

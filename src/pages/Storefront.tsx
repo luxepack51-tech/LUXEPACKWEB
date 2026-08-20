@@ -341,7 +341,7 @@ const StorefrontInner: React.FC<StorefrontPageProps> = ({ onNavigate }) => {
       contents: [{
         content_id: perfume.id,
         content_name: perfume.name,
-        content_type: 'featured',
+        content_type: 'product',
         quantity: 1,
         price: Number(perfume.price) || 0
       }],
@@ -411,7 +411,7 @@ const StorefrontInner: React.FC<StorefrontPageProps> = ({ onNavigate }) => {
         contents: [{
           content_id: directOrderPerfume.id,
           content_name: directOrderPerfume.name,
-          content_type: 'featured',
+          content_type: 'product',
           quantity: 1,
           price: Number(directOrderPerfume.price) || 0
         }],
@@ -529,7 +529,7 @@ const StorefrontInner: React.FC<StorefrontPageProps> = ({ onNavigate }) => {
       contents: finalCartItems.map(item => ({
         content_id: item.package_id || item.featured_perfume_id || item.id,
         content_name: item.name,
-        content_type: item.type === 'package' ? 'package' : 'featured',
+        content_type: item.type === 'package' ? 'product_group' : 'product',
         quantity: item.quantity || 1,
         price: Number(item.unit_price) || 0
       })),

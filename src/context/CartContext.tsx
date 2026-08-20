@@ -107,13 +107,13 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     triggerAddedFeedback(pkg.name);
 
-    // Track TikTok AddToCart event
+    // Track TikTok AddToCart event (strictly valid content_type: 'product_group')
     trackTikTokAddToCart({
       id: pkg.id,
       name: pkg.name,
       price: Number(pkg.price) || 0,
       quantity,
-      type: 'package',
+      type: 'product_group',
       category: 'باقات عطور'
     });
   };
@@ -153,13 +153,13 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     triggerAddedFeedback(featuredPerfume.name);
 
-    // Track TikTok AddToCart event
+    // Track TikTok AddToCart event (strictly valid content_type: 'product')
     trackTikTokAddToCart({
       id: featuredPerfume.id,
       name: featuredPerfume.name,
       price: Number(featuredPerfume.price) || 0,
       quantity,
-      type: 'featured',
+      type: 'product',
       category: 'عطور مميزة'
     });
   };
