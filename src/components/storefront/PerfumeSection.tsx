@@ -1,7 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Perfume, Category, Package } from '../../types/storefront';
 import { Check, AlertCircle, PackageX, Sparkles } from 'lucide-react';
-import { trackTikTokViewContent } from '../../services/tiktok';
 
 interface PerfumeSectionProps {
   perfumes: Perfume[];
@@ -69,14 +68,6 @@ export const PerfumeSection: React.FC<PerfumeSectionProps> = ({
   }, [perfumes, selectedCategoryId, categories]);
 
   const handleSelectClick = (perfume: Perfume, isAlreadySelected: boolean) => {
-    // Track ViewContent on click (strictly as 'product')
-    trackTikTokViewContent({
-      id: perfume.id,
-      name: perfume.name,
-      type: 'product',
-      category: perfume.category
-    });
-
     if (!selectedPackage) {
       setLimitWarning('يرجى اختيار الباك أولاً من الأعلى للتمكن من تحديد العطور');
       setTimeout(() => setLimitWarning(null), 3500);

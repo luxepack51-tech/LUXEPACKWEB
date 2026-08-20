@@ -118,7 +118,7 @@ export function trackTikTokPageView() {
 
 /**
  * 2. ViewContent Event
- * Triggered when viewing/opening a perfume, package, or featured item
+ * Triggered when viewing/opening a perfume or package (only when it has a valid positive price)
  */
 export function trackTikTokViewContent(item: {
   id: string;
@@ -130,8 +130,20 @@ export function trackTikTokViewContent(item: {
 }) {
   const price = Number(item.price) || 0;
   const quantity = Math.max(1, Number(item.quantity) || 1);
-  const totalValue = price * quantity;
+  const totalValue = Number((price * quantity).toFixed(2));
   const contentType = normalizeContentType(item.type);
+
+  // Strictly skip ViewContent if value is 0 or invalid (e.g. choosing perfumes inside a package)
+  if (totalValue <= 0 || isNaN(totalValue)) {
+    console.warn(`[TIKTOK] ViewContent skipped: Item has no standalone price (${price}) for:`, item.name);
+    return;
+  }
+
+  // Prevent generic or invalid names such as "Image"
+  let safeName = String(item.name || '').trim();
+  if (!safeName || safeName.toLowerCase() === 'image') {
+    safeName = contentType === 'product_group' ? 'باقة عطور' : 'عطر فاخر';
+  }
 
   const eventId = generateEventId('view');
 
@@ -140,29 +152,26 @@ export function trackTikTokViewContent(item: {
       {
         content_id: String(item.id),
         content_type: contentType,
-        content_name: item.name,
-        content_category: item.category || 'العطور',
+        content_name: safeName,
+        content_category: item.category || (contentType === 'product_group' ? 'باقات عطور' : 'العطور'),
         quantity,
         price
       }
     ],
     content_id: String(item.id),
     content_type: contentType,
-    content_name: item.name,
-    content_category: item.category || 'العطور',
+    content_name: safeName,
+    content_category: item.category || (contentType === 'product_group' ? 'باقات عطور' : 'العطور'),
     quantity,
+    value: totalValue,
     currency: DEFAULT_CURRENCY
   };
 
-  if (totalValue > 0) {
-    payload.value = totalValue;
-  }
-
   console.log('[TIKTOK] ViewContent', {
     content_id: item.id,
-    content_name: item.name,
+    content_name: safeName,
     content_type: contentType,
-    value: payload.value,
+    value: totalValue,
     currency: DEFAULT_CURRENCY
   });
 
@@ -201,6 +210,14 @@ export function trackTikTokAddToCart(item: {
     return;
   }
 
+  const contentType = normalizeContentType(item.type);
+
+  // Prevent generic or invalid names such as "Image"
+  let safeName = String(item.name || '').trim();
+  if (!safeName || safeName.toLowerCase() === 'image') {
+    safeName = contentType === 'product_group' ? 'باقة عطور' : 'عطر فاخر';
+  }
+
   // Deduplication check: ignore identical AddToCart within 750ms
   const signature = `${item.id}_${quantity}_${totalValue}`;
   const now = Date.now();
@@ -211,12 +228,11 @@ export function trackTikTokAddToCart(item: {
   lastAddToCartSignature = signature;
   lastAddToCartTime = now;
 
-  const contentType = normalizeContentType(item.type);
   const eventId = generateEventId('cart');
 
   console.log('[TIKTOK] AddToCart', {
     content_id: item.id,
-    content_name: item.name,
+    content_name: safeName,
     content_type: contentType,
     quantity,
     value: totalValue,
@@ -230,16 +246,16 @@ export function trackTikTokAddToCart(item: {
         {
           content_id: String(item.id),
           content_type: contentType,
-          content_name: item.name,
-          content_category: item.category || 'العطور',
+          content_name: safeName,
+          content_category: item.category || (contentType === 'product_group' ? 'باقات عطور' : 'العطور'),
           quantity,
           price
         }
       ],
       content_id: String(item.id),
       content_type: contentType,
-      content_name: item.name,
-      content_category: item.category || 'العطور',
+      content_name: safeName,
+      content_category: item.category || (contentType === 'product_group' ? 'باقات عطور' : 'العطور'),
       quantity,
       value: totalValue,
       currency: DEFAULT_CURRENCY
