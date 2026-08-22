@@ -258,13 +258,10 @@ const StorefrontInner: React.FC<StorefrontPageProps> = ({ onNavigate }) => {
     setSelectedPerfumes([]);
   };
 
-  // Confirm perfume selection & Proceed to checkout -> Smooth scroll to order form or open modal
+  // Confirm perfume selection & Proceed to checkout -> Smooth scroll down to delivery section
   const handleProceedToCheckout = () => {
-    if (selectedPackage && selectedPerfumes.length === selectedPackage.perfumes_count) {
-      // Add package and selected perfumes to the cart
-      addPackageToCart(selectedPackage, selectedPerfumes);
-      setSelectedPackage(null);
-      setSelectedPerfumes([]);
+    if (activeSection !== 'packages') {
+      setActiveSection('packages');
     }
 
     const currentTotal = productsTotal || (selectedPackage ? selectedPackage.price : 0);
@@ -295,15 +292,19 @@ const StorefrontInner: React.FC<StorefrontPageProps> = ({ onNavigate }) => {
       });
     }
 
-    const orderSection = document.getElementById('delivery') || document.getElementById('order-form');
-    if (orderSection) {
-      orderSection.scrollIntoView({
-        behavior: 'smooth',
-        block: 'start'
-      });
-    } else {
-      setIsOrderModalOpen(true);
-    }
+    // Smooth scroll down to delivery section
+    const scrollToDelivery = () => {
+      const deliverySection = document.getElementById('delivery') || document.getElementById('delivery-section') || document.getElementById('order-form');
+      if (deliverySection) {
+        deliverySection.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start'
+        });
+      }
+    };
+
+    scrollToDelivery();
+    setTimeout(scrollToDelivery, 100);
   };
 
   const handleConfirmPerfumeSelection = handleProceedToCheckout;
@@ -659,9 +660,6 @@ const StorefrontInner: React.FC<StorefrontPageProps> = ({ onNavigate }) => {
               onAddPackageToCart={handleAddCurrentPackageToCart}
             />
 
-            {/* How It Works Guide */}
-            <HowItWorks />
-
             {/* Delivery & Order Form & Summary Container */}
             <section id="delivery" className="py-8 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto scroll-mt-20 sm:scroll-mt-24">
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
@@ -736,6 +734,9 @@ const StorefrontInner: React.FC<StorefrontPageProps> = ({ onNavigate }) => {
 
               </div>
             </section>
+
+            {/* How It Works Guide */}
+            <HowItWorks />
           </div>
         ) : (
           /* ============================================================ */
@@ -796,7 +797,7 @@ const StorefrontInner: React.FC<StorefrontPageProps> = ({ onNavigate }) => {
               onClick={handleConfirmPerfumeSelection}
               className="px-6 py-3 rounded-2xl bg-gradient-to-r from-emerald-600 via-green-600 to-teal-600 text-white font-black text-xs shadow-md shadow-emerald-500/20 active:scale-98 cursor-pointer flex items-center gap-1.5"
             >
-              <span>✓ تأكيد الطلب والتوصيل</span>
+              <span>✓ تأكيد الطلب</span>
             </button>
           </div>
         </div>

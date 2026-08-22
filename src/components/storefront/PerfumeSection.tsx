@@ -113,11 +113,26 @@ export const PerfumeSection: React.FC<PerfumeSectionProps> = ({
         </div>
       </div>
 
-      {/* Warning banner if limit reached or package not selected */}
+      {/* Floating / Toast Warning banner if limit reached or package not selected */}
       {limitWarning && (
-        <div className="max-w-2xl mx-auto mb-6 p-3.5 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs sm:text-sm flex items-center justify-center gap-2 animate-fade-in shadow-xs">
-          <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
-          <span className="font-semibold">{limitWarning}</span>
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 w-[92%] max-w-lg animate-in fade-in slide-in-from-top-4 duration-300 pointer-events-auto">
+          <div className="p-4 rounded-2xl bg-amber-500 text-white border border-amber-400 shadow-xl shadow-amber-500/25 flex items-center justify-between gap-3 text-center sm:text-right">
+            <div className="flex items-center gap-3 w-full justify-center">
+              <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+                <AlertCircle className="w-5 h-5 text-white" />
+              </div>
+              <span className="font-bold text-xs sm:text-sm leading-relaxed text-white">
+                {limitWarning}
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setLimitWarning(null)}
+              className="text-white/80 hover:text-white text-xs font-bold px-2 py-1 rounded-lg bg-black/10 hover:bg-black/20 shrink-0 cursor-pointer"
+            >
+              ✕
+            </button>
+          </div>
         </div>
       )}
 
@@ -275,7 +290,7 @@ export const PerfumeSection: React.FC<PerfumeSectionProps> = ({
               onClick={onScrollToDelivery}
               className="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-gradient-to-r from-emerald-600 via-green-600 to-teal-600 hover:from-emerald-700 hover:to-green-700 text-white font-black text-sm sm:text-base shadow-md shadow-emerald-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer whitespace-nowrap flex items-center justify-center gap-2"
             >
-              <span>✓ تأكيد الطلب وإكمال التوصيل</span>
+              <span>✓ تأكيد الطلب</span>
             </button>
           </div>
         </div>
