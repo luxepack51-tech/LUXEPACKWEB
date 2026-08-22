@@ -6,7 +6,7 @@ import { fetchPerfumes, fetchCategories } from '../services/perfumes';
 import { fetchWilayas, fetchCommunesByWilaya, fetchCommuneById } from '../services/delivery';
 import { fetchActiveFeaturedPerfumes } from '../services/featuredPerfumes';
 import { createOrder } from '../services/orders';
-import { initMetaPixel, trackPixelEvent } from '../services/pixel';
+import { initMetaPixel, trackMetaInitiateCheckout, trackMetaPurchase } from '../services/meta';
 import { trackTikTokInitiateCheckout, trackTikTokPlaceAnOrder } from '../services/tiktok';
 
 import { CartProvider, useCart } from '../context/CartContext';
@@ -229,11 +229,6 @@ const StorefrontInner: React.FC<StorefrontPageProps> = ({ onNavigate }) => {
     if (selectedPerfumes.length > pkg.perfumes_count) {
       setSelectedPerfumes(selectedPerfumes.slice(0, pkg.perfumes_count));
     }
-    trackPixelEvent('AddToCart', {
-      content_name: pkg.name,
-      value: pkg.price,
-      currency: 'DZD'
-    });
     scrollToSection('perfumes');
   };
 
@@ -270,6 +265,34 @@ const StorefrontInner: React.FC<StorefrontPageProps> = ({ onNavigate }) => {
       addPackageToCart(selectedPackage, selectedPerfumes);
       setSelectedPackage(null);
       setSelectedPerfumes([]);
+    }
+
+    const currentTotal = productsTotal || (selectedPackage ? selectedPackage.price : 0);
+    if (currentTotal > 0) {
+      const contents = cartItems.length > 0 ? cartItems.map(item => ({
+        content_id: item.package_id || item.featured_perfume_id || item.id,
+        content_name: item.name,
+        content_type: item.type === 'package' ? 'product_group' : 'product',
+        quantity: item.quantity || 1,
+        price: Number(item.unit_price) || 0
+      })) : (selectedPackage ? [{
+        content_id: selectedPackage.id,
+        content_name: selectedPackage.name,
+        content_type: 'product_group',
+        quantity: 1,
+        price: Number(selectedPackage.price) || 0
+      }] : []);
+
+      trackMetaInitiateCheckout({
+        contents,
+        value: currentTotal,
+        currency: 'DZD'
+      });
+      trackTikTokInitiateCheckout({
+        contents,
+        value: currentTotal,
+        currency: 'DZD'
+      });
     }
 
     const orderSection = document.getElementById('delivery') || document.getElementById('order-form');
@@ -337,15 +360,22 @@ const StorefrontInner: React.FC<StorefrontPageProps> = ({ onNavigate }) => {
   const handleOrderFeaturedPerfume = (perfume: FeaturedPerfume) => {
     setDirectOrderPerfume(perfume);
     setIsOrderModalOpen(true);
+    const itemPrice = Number(perfume.price) || 0;
+    const contents = [{
+      content_id: perfume.id,
+      content_name: perfume.name,
+      content_type: 'product',
+      quantity: 1,
+      price: itemPrice
+    }];
     trackTikTokInitiateCheckout({
-      contents: [{
-        content_id: perfume.id,
-        content_name: perfume.name,
-        content_type: 'product',
-        quantity: 1,
-        price: Number(perfume.price) || 0
-      }],
-      value: Number(perfume.price) || 0,
+      contents,
+      value: itemPrice,
+      currency: 'DZD'
+    });
+    trackMetaInitiateCheckout({
+      contents,
+      value: itemPrice,
       currency: 'DZD'
     });
   };
@@ -402,19 +432,22 @@ const StorefrontInner: React.FC<StorefrontPageProps> = ({ onNavigate }) => {
         status: 'pending'
       };
 
-      trackPixelEvent('InitiateCheckout', {
+      const directContents = [{
+        content_id: directOrderPerfume.id,
+        content_name: directOrderPerfume.name,
+        content_type: 'product',
+        quantity: 1,
+        price: Number(directOrderPerfume.price) || 0
+      }];
+
+      trackMetaInitiateCheckout({
+        contents: directContents,
         value: directTotalPrice,
         currency: 'DZD'
       });
 
       trackTikTokInitiateCheckout({
-        contents: [{
-          content_id: directOrderPerfume.id,
-          content_name: directOrderPerfume.name,
-          content_type: 'product',
-          quantity: 1,
-          price: Number(directOrderPerfume.price) || 0
-        }],
+        contents: directContents,
         value: directTotalPrice,
         currency: 'DZD'
       });
@@ -425,11 +458,7 @@ const StorefrontInner: React.FC<StorefrontPageProps> = ({ onNavigate }) => {
       if (result.success && result.order) {
         setIsOrderModalOpen(false);
         setDirectOrderPerfume(null);
-        trackPixelEvent('Purchase', {
-          value: directTotalPrice,
-          currency: 'DZD',
-          order_id: result.order.id
-        });
+        trackMetaPurchase(result.order);
         // TikTok COD PlaceAnOrder tracking (deduplicated by order.id)
         trackTikTokPlaceAnOrder(result.order);
         setCreatedOrder(result.order);
@@ -520,19 +549,22 @@ const StorefrontInner: React.FC<StorefrontPageProps> = ({ onNavigate }) => {
       status: 'pending'
     };
 
-    trackPixelEvent('InitiateCheckout', {
+    const cartContents = finalCartItems.map(item => ({
+      content_id: item.package_id || item.featured_perfume_id || item.id,
+      content_name: item.name,
+      content_type: item.type === 'package' ? 'product_group' : 'product',
+      quantity: item.quantity || 1,
+      price: Number(item.unit_price) || 0
+    }));
+
+    trackMetaInitiateCheckout({
+      contents: cartContents,
       value: totalPrice,
       currency: 'DZD'
     });
 
     trackTikTokInitiateCheckout({
-      contents: finalCartItems.map(item => ({
-        content_id: item.package_id || item.featured_perfume_id || item.id,
-        content_name: item.name,
-        content_type: item.type === 'package' ? 'product_group' : 'product',
-        quantity: item.quantity || 1,
-        price: Number(item.unit_price) || 0
-      })),
+      contents: cartContents,
       value: totalPrice,
       currency: 'DZD'
     });
@@ -546,11 +578,7 @@ const StorefrontInner: React.FC<StorefrontPageProps> = ({ onNavigate }) => {
       clearCart();
       setSelectedPackage(null);
       setSelectedPerfumes([]);
-      trackPixelEvent('Purchase', {
-        value: totalPrice,
-        currency: 'DZD',
-        order_id: result.order.id
-      });
+      trackMetaPurchase(result.order);
       // TikTok COD PlaceAnOrder tracking (deduplicated by order.id)
       trackTikTokPlaceAnOrder(result.order);
       setCreatedOrder(result.order);

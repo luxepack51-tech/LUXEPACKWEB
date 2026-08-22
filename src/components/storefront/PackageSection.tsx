@@ -2,6 +2,7 @@ import React from 'react';
 import { Package } from '../../types/storefront';
 import { Sparkles, Check, Gift } from 'lucide-react';
 import { trackTikTokViewContent } from '../../services/tiktok';
+import { trackMetaViewContent } from '../../services/meta';
 
 interface PackageSectionProps {
   packages: Package[];
@@ -63,10 +64,18 @@ export const PackageSection: React.FC<PackageSectionProps> = ({
                   type="button"
                   key={`${pkg.id}-${idx}`}
                   onClick={() => {
+                    const price = Number(pkg.price) || 0;
                     trackTikTokViewContent({
                       id: pkg.id,
                       name: pkg.name,
-                      price: Number(pkg.price) || 0,
+                      price,
+                      type: 'product_group',
+                      category: 'باقات عطور'
+                    });
+                    trackMetaViewContent({
+                      id: pkg.id,
+                      name: pkg.name,
+                      price,
                       type: 'product_group',
                       category: 'باقات عطور'
                     });

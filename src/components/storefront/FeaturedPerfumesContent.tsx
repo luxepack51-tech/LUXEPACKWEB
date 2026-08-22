@@ -6,6 +6,7 @@ import {
   Sparkles, Plus, Check, Tag, CheckCircle2 
 } from 'lucide-react';
 import { trackTikTokViewContent } from '../../services/tiktok';
+import { trackMetaViewContent } from '../../services/meta';
 
 interface FeaturedPerfumesContentProps {
   featuredPerfumes: FeaturedPerfume[];
@@ -317,10 +318,18 @@ export const FeaturedPerfumesContent: React.FC<FeaturedPerfumesContentProps> = (
                           <button
                             type="button"
                             onClick={() => {
+                              const price = Number(perfume.price) || 0;
                               trackTikTokViewContent({
                                 id: perfume.id,
                                 name: perfume.name,
-                                price: Number(perfume.price) || 0,
+                                price,
+                                type: 'product',
+                                category: 'عطور مميزة'
+                              });
+                              trackMetaViewContent({
+                                id: perfume.id,
+                                name: perfume.name,
+                                price,
                                 type: 'product',
                                 category: 'عطور مميزة'
                               });
