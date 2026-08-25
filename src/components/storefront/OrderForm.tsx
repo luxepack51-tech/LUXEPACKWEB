@@ -66,6 +66,9 @@ export const OrderForm: React.FC<OrderFormProps> = ({
             type="tel"
             required
             dir="ltr"
+            inputMode="numeric"
+            maxLength={10}
+            minLength={10}
             placeholder="05XXXXXXXX"
             value={phone}
             onChange={(e) => onPhoneChange(e.target.value)}

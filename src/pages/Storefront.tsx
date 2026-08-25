@@ -329,10 +329,46 @@ const StorefrontInner: React.FC<StorefrontPageProps> = ({ onNavigate }) => {
 
   const totalPrice = currentProductsPrice + (deliveryPrice ?? 0);
 
+  // Phone change handler enforcing prefix 05, 06, or 07 and max 10 digits
+  const handlePhoneChange = (val: string) => {
+    let clean = val.replace(/\D/g, '');
+    if (clean.startsWith('213') && clean.length > 3) {
+      clean = '0' + clean.slice(3);
+    }
+    
+    if (!clean) {
+      setPhone('');
+      return;
+    }
+    
+    // First character must strictly be '0'
+    if (clean[0] !== '0') {
+      setPhone('');
+      return;
+    }
+    
+    // If only '0' is entered, accept it
+    if (clean.length === 1) {
+      setPhone('0');
+      return;
+    }
+    
+    // Second character must strictly be '5', '6', or '7'
+    if (!['5', '6', '7'].includes(clean[1])) {
+      setPhone('0');
+      return;
+    }
+    
+    // Accept up to 10 digits starting with 05, 06, or 07
+    setPhone(clean.slice(0, 10));
+  };
+
   // Validation
   const perfumesNeeded = selectedPackage ? selectedPackage.perfumes_count : 0;
   const isPerfumeCountComplete = selectedPackage && selectedPerfumes.length === perfumesNeeded;
-  const isPhoneValid = phone.trim().length >= 9 && /^[0-9+\s-]{9,15}$/.test(phone.trim());
+  const cleanPhone = phone.trim().replace(/\D/g, '');
+  const isPhoneValid = cleanPhone.length === 10 && /^(05|06|07)[0-9]{8}$/.test(cleanPhone);
+  const phoneErrorMessage = null;
 
   let validationMessage: string | null = null;
   if (!directOrderPerfume && !hasCartItems && !selectedPackage) {
@@ -341,8 +377,6 @@ const StorefrontInner: React.FC<StorefrontPageProps> = ({ onNavigate }) => {
     validationMessage = `يرجى تحديد ${perfumesNeeded} عطور (تم تحديد ${selectedPerfumes.length} من أصل ${perfumesNeeded})`;
   } else if (!fullName.trim()) {
     validationMessage = 'يرجى إدخال الاسم واللقب الكامل';
-  } else if (!isPhoneValid) {
-    validationMessage = 'يرجى كتابة رقم هاتف صالح لمتابعة الطلب';
   } else if (!selectedWilayaId) {
     validationMessage = 'يرجى اختيار ولاية التوصيل';
   } else if (!selectedCommuneId) {
@@ -355,7 +389,7 @@ const StorefrontInner: React.FC<StorefrontPageProps> = ({ onNavigate }) => {
     validationMessage = 'التوصيل للمكتب غير متاح لهذه البلدية';
   }
 
-  const canSubmit = !validationMessage;
+  const canSubmit = !validationMessage && isPhoneValid;
 
   // Handle direct featured perfume order modal trigger (without modifying the cart)
   const handleOrderFeaturedPerfume = (perfume: FeaturedPerfume) => {
@@ -388,8 +422,8 @@ const StorefrontInner: React.FC<StorefrontPageProps> = ({ onNavigate }) => {
 
   // Handle Order Submit (Unified Cart, Direct Perfume, or Standalone package)
   const handleSubmitOrder = async () => {
-    if (validationMessage) {
-      console.error('[ORDER TRACE VALIDATION ERROR]', validationMessage);
+    if (validationMessage || !isPhoneValid) {
+      console.error('[ORDER TRACE VALIDATION ERROR]', validationMessage || 'Invalid phone number format');
       return;
     }
 
@@ -690,9 +724,9 @@ const StorefrontInner: React.FC<StorefrontPageProps> = ({ onNavigate }) => {
                     address={address}
                     notes={notes}
                     deliveryType={deliveryType}
-                    phoneError={phone && !isPhoneValid ? 'يرجى إدخال رقم هاتف صالح (مثال: 0550123456)' : null}
+                    phoneError={phoneErrorMessage}
                     onFullNameChange={setFullName}
-                    onPhoneChange={setPhone}
+                    onPhoneChange={handlePhoneChange}
                     onAddressChange={setAddress}
                     onNotesChange={setNotes}
                   />
@@ -820,7 +854,7 @@ const StorefrontInner: React.FC<StorefrontPageProps> = ({ onNavigate }) => {
         currency={settings.currency}
         fullName={fullName}
         phone={phone}
-        phoneError={phone && !isPhoneValid ? 'يرجى إدخال رقم هاتف صالح (مثال: 0550123456)' : null}
+        phoneError={phoneErrorMessage}
         isLoadingWilayas={isLoadingWilayas}
         isLoadingCommunes={isLoadingCommunes}
         isSubmitting={isSubmittingOrder}
@@ -830,7 +864,7 @@ const StorefrontInner: React.FC<StorefrontPageProps> = ({ onNavigate }) => {
         onCommuneChange={handleCommuneChange}
         onDeliveryTypeChange={handleDeliveryTypeChange}
         onFullNameChange={setFullName}
-        onPhoneChange={setPhone}
+        onPhoneChange={handlePhoneChange}
         onSubmitOrder={handleSubmitOrder}
       />
 

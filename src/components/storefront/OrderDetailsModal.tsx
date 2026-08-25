@@ -246,10 +246,14 @@ export const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
             <input
               type="tel"
               required
+              dir="ltr"
+              inputMode="numeric"
+              maxLength={10}
+              minLength={10}
               placeholder="05XXXXXXXX"
               value={phone}
               onChange={(e) => onPhoneChange(e.target.value)}
-              className={`w-full h-12 px-4 rounded-2xl bg-white border text-gray-900 placeholder-gray-400 focus:ring-1 outline-none text-sm transition-all ${
+              className={`w-full h-12 px-4 rounded-2xl bg-white border text-gray-900 placeholder-gray-400 text-left font-mono focus:ring-1 outline-none text-sm transition-all ${
                 phoneError
                   ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
                   : 'border-gray-300 focus:border-indigo-600 focus:ring-indigo-600'
